@@ -88,7 +88,8 @@ export default function History({ calls, target, onSync, onBack, onDelete, onSen
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900">{c.details.hospital}</p>
                     <p className="truncate text-xs text-slate-500">
-                      {c.details.district ? c.details.district + ' · ' : ''}
+                      {[c.details.taluk, c.details.district, c.details.state || 'Karnataka'].filter(Boolean).join(' · ')}
+                      {' · '}
                       {fmtDate(c.details.callAt)}
                     </p>
                     <p className="mt-0.5 text-xs text-slate-400">{c.sentAt ? 'Sent' : 'Only on this phone'}</p>

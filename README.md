@@ -1,6 +1,6 @@
 # CARE Forms Survey
 
-CARE Forms Survey supports survey entry on phones and desktops, with a desktop dashboard for Karnataka-wide hospital performance. Call a hospital, record whether the ICU forms in CARE are being filled (Yes / No), and pick a reason code for each No.
+CARE Forms Survey supports survey entry on phones and desktops, with a desktop dashboard for hospital performance. Call a hospital, record whether the ICU forms in CARE are being filled (Yes / No), and pick a reason code for each No.
 
 Built with Vite, React, TypeScript and Tailwind CSS. Calls are saved on the phone first, then sent to a **Supabase database** (recommended) and, optionally, to a Google Sheet.
 
@@ -18,7 +18,7 @@ Without the Supabase publishable key, the app still works locally: calls stay on
 
 ## Connect Supabase (shared database)
 
-1. **Create or update the tables and security rules.** In Supabase open **SQL Editor > New query**, paste all of `supabase/schema.sql`, and click **Run**. This creates the permission model and restricts survey access based on assigned permissions. Re-running it preserves existing survey rows.
+1. **Create or update the tables and security rules.** In Supabase open **SQL Editor > New query**, paste all of `supabase/schema.sql`, and click **Run**. This creates the permission model, adds the state and taluk columns if needed, and restricts survey access based on assigned permissions. Re-running it preserves existing survey rows.
 2. **Create the team's logins.** Open **Authentication > Users > Add user > Create new user**. Enter an email and password and tick **Auto Confirm User**. Repeat for each FSM, Hub engineer, manager, and administrator.
 3. **Bootstrap the first admin once.** Open `supabase/bootstrap-admin.sql`, replace `YOUR_ADMIN_EMAIL` with the email of the first administrator's existing Supabase Auth account, and run it in **SQL Editor**. This first step is required because no user can grant themselves admin permissions.
 4. **Stop strangers signing up.** In **Authentication** (Sign In / Providers, Email) turn off **Allow new users to sign up**.
@@ -32,7 +32,7 @@ Menu names move around between Supabase updates, but the steps stay the same.
 
 | Table | One row per | Holds |
 | --- | --- | --- |
-| `hospital_calls` | hospital call | hospital, district, who was called, caller, rating, follow-up date, remarks |
+| `hospital_calls` | hospital call | hospital, state/UT, district, taluk, who was called, caller, rating, follow-up date, remarks |
 | `call_answers` | form part per call | Yes or No, reason code R1 to R8, remarks |
 | `user_permissions` | app user | survey, dashboard, export, and user-management permissions |
 | `v_answers_flat` (view) | form part per call | the two tables joined, ready for Metabase or Excel |
@@ -40,7 +40,7 @@ Menu names move around between Supabase updates, but the steps stay the same.
 Rules enforced by the database, not just the app:
 
 - Only signed-in users with assigned permissions can submit surveys, read reports, export data, or manage permissions.
-- Users with report or export access can see all Karnataka hospitals. Permissions are assigned per user; area restrictions are not applied.
+- Users with report or export access can see all survey locations. Permissions are assigned per user; area restrictions are not applied.
 - Only users with the manage-users permission can grant or change app permissions.
 - Sending the same call twice is safe: the second time returns the existing row (matched on `client_id`).
 
@@ -48,17 +48,19 @@ Rules enforced by the database, not just the app:
 
 - Create each account in Supabase **Authentication > Users**, then an admin assigns its permissions from **Manage user access** in the app. Enter the existing account's email and select any combination of survey entry, dashboard, CSV export, and user management.
 - Survey entry is available on phones and desktops. Calls are saved on the device first and sent to Supabase when online; unsent calls can be retried from **History**.
-- The desktop **Analytics dashboard** shows latest hospital status, survey counts, monthly trends, repeated problem reasons, and weakest form areas. Filter by district, date range, and hospital name. Hospital coverage counts names already present in survey records; a verified hospital roster is needed to calculate coverage against all 100+ hospitals, including those never surveyed.
+- The desktop **Analytics dashboard** shows latest hospital status, survey counts, monthly trends, repeated problem reasons, and weakest form areas. Filter by state/UT, district, taluk, date range, and hospital name. Hospital coverage counts names already present in survey records; a verified hospital roster is needed to calculate coverage against all 100+ hospitals, including those never surveyed.
 - Users with export permission can download filtered survey records as CSV/Excel-compatible data. Dashboard viewing and export are separate permissions.
 
 ## How a call works
 
-1. **Call details**: hospital, district or taluk, who you spoke to, your name and role.
+1. **Call details**: hospital, state/UT, district, taluk, who you spoke to, your name and role. Karnataka district and taluk lists are provided; other states/UTs and unlisted Karnataka locations can be entered manually.
 2. **16 parts, one per screen**: Yes or No. Yes moves to the next part. No asks for a reason code (R1 to R8) and optional remarks.
 3. **Summary**: score ring, rating, the parts not being filled, then who is responsible per shift, help needed and follow-up date.
 4. **Save**: on the phone, and to the database. Share the summary on WhatsApp.
 
 A half-finished call is kept on the phone, so a dropped call loses nothing.
+
+The Karnataka district and taluk suggestions are based on the India Local Government Directory dataset published by [planemad/india-local-government-directory](https://github.com/planemad/india-local-government-directory), retrieved 11 March 2022, under the [Government Open Data License – India](https://data.gov.in/government-open-data-license-india). Names and administrative boundaries can change; manual entry is available when a location is missing.
 
 ### Scoring
 
@@ -88,6 +90,7 @@ With Supabase connected, the Sheet is an extra copy and a Sheet failure never bl
 | `supabase/schema.sql` | Tables, permission checks, access rules, `submit_call` function, reporting view |
 | `supabase/bootstrap-admin.sql` | One-time setup for the first app administrator |
 | `src/data.ts` | The 16 form parts, reason codes, designations |
+| `src/locations.ts` | Indian states/UTs and Karnataka district/taluk suggestions |
 | `src/lib.ts` | Scoring, CSV and Sheet row, database payload, WhatsApp text, storage |
 | `src/supabase.ts`, `src/sync.ts` | Supabase client and sending |
 | `src/Login.tsx`, `src/Reports.tsx` | Sign-in screen and desktop analytics |

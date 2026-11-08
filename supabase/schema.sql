@@ -16,7 +16,9 @@ create table if not exists public.hospital_calls (
   caller_name       text not null,
   caller_role       text not null,
   hospital          text not null,
+  state             text not null default 'Karnataka',
   district          text,
+  taluk             text,
   spoke_to          text not null,
   designation       text,
   phone             text,
@@ -32,6 +34,12 @@ create table if not exists public.hospital_calls (
   remarks           text
 );
 
+-- Additive location upgrade for databases created before state and taluk were collected.
+alter table public.hospital_calls
+  add column if not exists state text not null default 'Karnataka';
+alter table public.hospital_calls
+  add column if not exists taluk text;
+
 -- One row per form part per call (16 rows for a full call).
 create table if not exists public.call_answers (
   call_id      uuid not null references public.hospital_calls (id) on delete cascade,
@@ -46,6 +54,7 @@ create table if not exists public.call_answers (
 
 create index if not exists hospital_calls_hospital_idx on public.hospital_calls (lower(hospital));
 create index if not exists hospital_calls_district_idx on public.hospital_calls (district);
+create index if not exists hospital_calls_state_district_idx on public.hospital_calls (state, district);
 create index if not exists hospital_calls_called_at_idx on public.hospital_calls (called_at desc);
 
 ------------------------------------------------------------
@@ -208,7 +217,7 @@ begin
   end if;
 
   insert into public.hospital_calls (
-    client_id, called_at, caller_name, caller_role, hospital, district, spoke_to,
+    client_id, called_at, caller_name, caller_role, hospital, state, district, taluk, spoke_to,
     designation, phone, parts_yes, parts_applicable, percent, rating, overall_result,
     responsible, help_needed, help_for, follow_up, remarks
   ) values (
@@ -217,7 +226,9 @@ begin
     payload ->> 'caller_name',
     payload ->> 'caller_role',
     payload ->> 'hospital',
+    coalesce(nullif(payload ->> 'state', ''), 'Karnataka'),
     nullif(payload ->> 'district', ''),
+    nullif(payload ->> 'taluk', ''),
     payload ->> 'spoke_to',
     nullif(payload ->> 'designation', ''),
     nullif(payload ->> 'phone', ''),
@@ -285,7 +296,9 @@ select
   a.part_title,
   case when a.filling then 'Yes' else 'No' end as filling,
   a.reason_code,
-  a.remarks
+  a.remarks,
+  c.state,
+  c.taluk
 from public.call_answers a
 join public.hospital_calls c on c.id = a.call_id;
 

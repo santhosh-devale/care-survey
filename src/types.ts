@@ -13,7 +13,9 @@ export type CallerRole = 'FSM' | 'Hub Engg' | 'Other'
 
 export interface Details {
   hospital: string
+  state: string
   district: string
+  taluk: string
   spokeTo: string
   designation: string
   phone: string

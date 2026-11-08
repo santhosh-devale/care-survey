@@ -15,7 +15,9 @@ interface AnswerRow {
 interface CallRow {
   id: string
   hospital: string
+  state: string | null
   district: string | null
+  taluk: string | null
   called_at: string | null
   caller_name: string
   caller_role: string
@@ -41,7 +43,9 @@ function downloadRows(rows: CallRow[]) {
   const columns = [
     'Survey date',
     'Hospital',
+    'State',
     'District',
+    'Taluk',
     'Caller',
     'Caller role',
     'Spoke to',
@@ -62,7 +66,9 @@ function downloadRows(rows: CallRow[]) {
     const values: (string | number | boolean | null)[] = [
       row.called_at,
       row.hospital,
+      row.state,
       row.district,
+      row.taluk,
       row.caller_name,
       row.caller_role,
       row.spoke_to,
@@ -106,7 +112,9 @@ export default function Reports({
   const [rows, setRows] = useState<CallRow[] | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [state, setState] = useState('')
   const [district, setDistrict] = useState('')
+  const [taluk, setTaluk] = useState('')
   const [hospitalSearch, setHospitalSearch] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -118,7 +126,7 @@ export default function Reports({
     for (let offset = 0; ; offset += PAGE_SIZE) {
       const { data, error: queryError } = await supabase
         .from('hospital_calls')
-        .select('id, hospital, district, called_at, caller_name, caller_role, spoke_to, designation, phone, rating, percent, overall_result, responsible, help_needed, help_for, follow_up, remarks, call_answers(part_id, filling, reason_code, remarks)')
+        .select('id, hospital, state, district, taluk, called_at, caller_name, caller_role, spoke_to, designation, phone, rating, percent, overall_result, responsible, help_needed, help_for, follow_up, remarks, call_answers(part_id, filling, reason_code, remarks)')
         .order('called_at', { ascending: false, nullsFirst: false })
         .order('id', { ascending: true })
         .range(offset, offset + PAGE_SIZE - 1)
@@ -144,9 +152,23 @@ export default function Reports({
     void load()
   }, [load])
 
-  const districts = useMemo(
-    () => Array.from(new Set((rows ?? []).map((row) => (row.district ?? '').trim()).filter(Boolean))).sort(),
+  const states = useMemo(
+    () => Array.from(new Set((rows ?? []).map((row) => (row.state ?? '').trim()).filter(Boolean))).sort(),
     [rows],
+  )
+  const districts = useMemo(
+    () => Array.from(new Set((rows ?? [])
+      .filter((row) => !state || (row.state ?? '').trim() === state)
+      .map((row) => (row.district ?? '').trim())
+      .filter(Boolean))).sort(),
+    [rows, state],
+  )
+  const taluks = useMemo(
+    () => Array.from(new Set((rows ?? [])
+      .filter((row) => (!state || (row.state ?? '').trim() === state) && (!district || (row.district ?? '').trim() === district))
+      .map((row) => (row.taluk ?? '').trim())
+      .filter(Boolean))).sort(),
+    [rows, state, district],
   )
 
   const report = useMemo(() => {
@@ -154,7 +176,9 @@ export default function Reports({
     const inScope = (rows ?? []).filter((row) => {
       const date = row.called_at?.slice(0, 10) ?? ''
       return (
+        (!state || (row.state ?? '').trim() === state) &&
         (!district || (row.district ?? '').trim() === district) &&
+        (!taluk || (row.taluk ?? '').trim() === taluk) &&
         (!startDate || date >= startDate) &&
         (!endDate || date <= endDate) &&
         (!search || row.hospital.toLocaleLowerCase().includes(search))
@@ -163,7 +187,7 @@ export default function Reports({
 
     const latestByHospital = new Map<string, CallRow>()
     for (const row of inScope) {
-      const key = `${(row.district ?? '').trim().toLocaleLowerCase()}::${row.hospital.trim().toLocaleLowerCase()}`
+      const key = `${(row.state ?? '').trim().toLocaleLowerCase()}::${(row.district ?? '').trim().toLocaleLowerCase()}::${row.hospital.trim().toLocaleLowerCase()}`
       if (!latestByHospital.has(key)) latestByHospital.set(key, row)
     }
     const latest = Array.from(latestByHospital.values())
@@ -225,7 +249,7 @@ export default function Reports({
     )
     const average = latest.length ? Math.round(latest.reduce((sum, row) => sum + row.percent, 0) / latest.length) : 0
     return { calls: inScope, latest, ratings, parts, reasons, followUps, trends, hospitals, average }
-  }, [rows, district, hospitalSearch, startDate, endDate])
+  }, [rows, state, district, taluk, hospitalSearch, startDate, endDate])
 
   const [today] = useState(() => new Date().toLocaleDateString('en-CA'))
   const maxReason = Math.max(1, ...report.reasons.map((reason) => reason.n))
@@ -239,7 +263,7 @@ export default function Reports({
           <button type="button" onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50" aria-label="Back to home">←</button>
           <div>
             <p className="text-sm font-bold text-slate-900">CARE Forms</p>
-            <p className="text-xs text-slate-500">Karnataka operations</p>
+            <p className="text-xs text-slate-500">India-wide operations</p>
           </div>
         </div>
         <button
@@ -258,7 +282,7 @@ export default function Reports({
             <p className="text-sm font-semibold text-emerald-800">{canReadDashboard ? 'Performance overview' : 'Data tools'}</p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{canReadDashboard ? 'Hospital analytics' : 'Export survey data'}</h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              {canReadDashboard ? 'Spot low-compliance areas, follow-ups, and repeated problems across Karnataka.' : 'Download survey records for analysis.'}
+              {canReadDashboard ? 'Spot low-compliance areas, follow-ups, and repeated problems across India.' : 'Download survey records for analysis.'}
             </p>
           </div>
           {permissions.can_export && (
@@ -280,13 +304,13 @@ export default function Reports({
                   <h2 className="text-sm font-bold text-slate-900">Filter survey data</h2>
                   <p className="mt-0.5 text-xs text-slate-500">Adjust the date range and hospital area.</p>
                 </div>
-                {(district || hospitalSearch || startDate || endDate) && (
-                  <button type="button" className="text-xs font-semibold text-emerald-800 hover:text-emerald-950" onClick={() => { setDistrict(''); setHospitalSearch(''); setStartDate(''); setEndDate('') }}>
+                {(state || district || taluk || hospitalSearch || startDate || endDate) && (
+                  <button type="button" className="text-xs font-semibold text-emerald-800 hover:text-emerald-950" onClick={() => { setState(''); setDistrict(''); setTaluk(''); setHospitalSearch(''); setStartDate(''); setEndDate('') }}>
                     Clear filters
                   </button>
                 )}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                 {canReadDashboard && (
                   <label className="text-xs font-semibold text-slate-600">
                     Hospital
@@ -295,10 +319,28 @@ export default function Reports({
                 )}
                 {canReadDashboard && (
                   <label className="text-xs font-semibold text-slate-600">
+                    State / Union Territory
+                    <select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" value={state} onChange={(event) => { setState(event.target.value); setDistrict(''); setTaluk('') }}>
+                      <option value="">All states / UTs</option>
+                      {states.map((item) => <option key={item}>{item}</option>)}
+                    </select>
+                  </label>
+                )}
+                {canReadDashboard && (
+                  <label className="text-xs font-semibold text-slate-600">
                     District
-                    <select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" value={district} onChange={(event) => setDistrict(event.target.value)}>
+                    <select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" value={district} onChange={(event) => { setDistrict(event.target.value); setTaluk('') }}>
                       <option value="">All districts</option>
                       {districts.map((item) => <option key={item}>{item}</option>)}
+                    </select>
+                  </label>
+                )}
+                {canReadDashboard && (
+                  <label className="text-xs font-semibold text-slate-600">
+                    Taluk
+                    <select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" value={taluk} onChange={(event) => setTaluk(event.target.value)}>
+                      <option value="">All taluks</option>
+                      {taluks.map((item) => <option key={item}>{item}</option>)}
                     </select>
                   </label>
                 )}
@@ -370,7 +412,7 @@ export default function Reports({
                           </div>
                         </div>
                       ))}
-                      <p className="text-xs text-slate-500">Counts No answers across all calls in the selected date and district filters.</p>
+                      <p className="text-xs text-slate-500">Counts No answers across all calls in the selected date and location filters.</p>
                     </Card>
                   </section>
                 </div>
@@ -398,11 +440,13 @@ export default function Reports({
                     <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-600">No hospitals match these filters.</p>
                   ) : (
                     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-                      <table className="w-full min-w-[760px] text-left text-sm">
+                      <table className="w-full min-w-[980px] text-left text-sm">
                         <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                           <tr>
                             <th className="px-4 py-3">Hospital</th>
+                            <th className="px-4 py-3">State / UT</th>
                             <th className="px-4 py-3">District</th>
+                            <th className="px-4 py-3">Taluk</th>
                             <th className="px-4 py-3">Latest survey</th>
                             <th className="px-4 py-3">Caller</th>
                             <th className="px-4 py-3">Score</th>
@@ -413,7 +457,9 @@ export default function Reports({
                           {report.hospitals.map((row) => (
                             <tr key={row.id} className="hover:bg-slate-50">
                               <td className="px-4 py-3 font-semibold text-slate-900">{row.hospital}</td>
+                              <td className="px-4 py-3 text-slate-600">{row.state || '—'}</td>
                               <td className="px-4 py-3 text-slate-600">{row.district || '—'}</td>
+                              <td className="px-4 py-3 text-slate-600">{row.taluk || '—'}</td>
                               <td className="px-4 py-3 text-slate-600">{row.called_at ? new Date(row.called_at).toLocaleDateString('en-IN') : '—'}</td>
                               <td className="px-4 py-3 text-slate-600">{row.caller_name}</td>
                               <td className="px-4 py-3 font-semibold text-slate-800">{row.percent}%</td>
@@ -440,7 +486,7 @@ export default function Reports({
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="truncate font-semibold text-slate-900">{row.hospital}</p>
-                                <p className="truncate text-xs text-slate-500">{row.district ? `${row.district} · ` : ''}{row.percent}% filling · {row.caller_name}</p>
+                                <p className="truncate text-xs text-slate-500">{[row.taluk, row.district, row.state].filter(Boolean).join(' · ')}{row.state || row.district || row.taluk ? ' · ' : ''}{row.percent}% filling · {row.caller_name}</p>
                               </div>
                               <RatingBadge rating={row.rating} />
                             </div>

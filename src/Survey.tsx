@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DESIGNATIONS, GROUP_STYLE, PARTS, REASONS } from './data'
+import { INDIAN_STATES_AND_UTS, KARNATAKA_DISTRICTS, KARNATAKA_TALUKS } from './locations'
 import {
   emptyClosing,
   emptyDetails,
@@ -54,7 +55,23 @@ export default function Survey({
   const summaryStep = total + 1
 
   const [step, setStep] = useState(draft?.step ?? 0)
-  const [details, setDetails] = useState<Details>(draft?.details ?? emptyDetails(caller.name, caller.role))
+  const [details, setDetails] = useState<Details>(() => ({
+    ...emptyDetails(caller.name, caller.role),
+    ...draft?.details,
+    state: draft?.details?.state || 'Karnataka',
+    taluk: draft?.details?.taluk ?? '',
+  }))
+  const [customDistrict, setCustomDistrict] = useState(() => {
+    const state = draft?.details?.state || 'Karnataka'
+    const district = draft?.details?.district ?? ''
+    return state === 'Karnataka' && !!district && !KARNATAKA_DISTRICTS.includes(district)
+  })
+  const [customTaluk, setCustomTaluk] = useState(() => {
+    const state = draft?.details?.state || 'Karnataka'
+    const district = draft?.details?.district ?? ''
+    const taluk = draft?.details?.taluk ?? ''
+    return state === 'Karnataka' && !!taluk && !(KARNATAKA_TALUKS[district] ?? []).includes(taluk)
+  })
   const [answers, setAnswers] = useState<Answers>(draft?.answers ?? {})
   const [closing, setClosing] = useState<Closing>(draft?.closing ?? emptyClosing())
   const [saved, setSaved] = useState<Call | null>(null)
@@ -177,6 +194,11 @@ export default function Survey({
   if (step === 0) {
     const up = <K extends keyof Details>(k: K, v: Details[K]) => setDetails({ ...details, [k]: v })
     const ok = !!details.hospital.trim() && !!details.spokeTo.trim() && !!details.caller.trim()
+    const isKarnataka = details.state === 'Karnataka'
+    const districtOptions = isKarnataka ? KARNATAKA_DISTRICTS : []
+    const talukOptions = isKarnataka ? KARNATAKA_TALUKS[details.district] ?? [] : []
+    const districtIsListed = districtOptions.includes(details.district)
+    const talukIsListed = talukOptions.includes(details.taluk)
     return (
       <>
         {header}
@@ -188,9 +210,85 @@ export default function Survey({
           <Field label="Hospital" required>
             <input className={inputCls} value={details.hospital} onChange={(e) => up('hospital', e.target.value)} placeholder="e.g. District Hospital Mysuru" />
           </Field>
-          <Field label="District / Taluk">
-            <input className={inputCls} value={details.district} onChange={(e) => up('district', e.target.value)} />
+          <Field label="State / Union Territory">
+            <select
+              className={inputCls}
+              value={details.state || 'Karnataka'}
+              onChange={(e) => {
+                setDetails({ ...details, state: e.target.value, district: '', taluk: '' })
+                setCustomDistrict(false)
+                setCustomTaluk(false)
+              }}
+            >
+              {INDIAN_STATES_AND_UTS.map((state) => <option key={state}>{state}</option>)}
+            </select>
           </Field>
+          <div className="block">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-slate-700">District</span>
+              {isKarnataka ? (
+                <select
+                  className={inputCls}
+                  value={customDistrict ? '__other__' : details.district}
+                  onChange={(e) => {
+                    const isOther = e.target.value === '__other__'
+                    const district = isOther ? (districtIsListed ? '' : details.district) : e.target.value
+                    setDetails({ ...details, district, taluk: '' })
+                    setCustomDistrict(isOther)
+                    setCustomTaluk(false)
+                  }}
+                >
+                  <option value="">Select district</option>
+                  {districtOptions.map((district) => <option key={district}>{district}</option>)}
+                  <option value="__other__">Other / enter manually</option>
+                </select>
+              ) : (
+                <input className={inputCls} value={details.district} onChange={(e) => up('district', e.target.value)} placeholder="Enter district" />
+              )}
+            </label>
+            {isKarnataka && customDistrict && (
+              <input
+                className={`${inputCls} mt-2`}
+                value={details.district}
+                onChange={(e) => setDetails({ ...details, district: e.target.value, taluk: '' })}
+                placeholder="Enter district"
+                aria-label="Enter district"
+              />
+            )}
+          </div>
+          <div className="block">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-slate-700">Taluk</span>
+              {isKarnataka ? (
+                <select
+                  className={inputCls}
+                  value={customTaluk ? '__other__' : details.taluk}
+                  disabled={!details.district}
+                  onChange={(e) => {
+                    const isOther = e.target.value === '__other__'
+                    const taluk = isOther ? (talukIsListed ? '' : details.taluk) : e.target.value
+                    up('taluk', taluk)
+                    setCustomTaluk(isOther)
+                  }}
+                >
+                  <option value="">Select taluk</option>
+                  {talukOptions.map((taluk) => <option key={taluk}>{taluk}</option>)}
+                  <option value="__other__">Other / enter manually</option>
+                </select>
+              ) : (
+                <input className={inputCls} value={details.taluk} onChange={(e) => up('taluk', e.target.value)} placeholder="Enter taluk" />
+              )}
+            </label>
+            {isKarnataka && customTaluk && (
+              <input
+                className={`${inputCls} mt-2`}
+                value={details.taluk}
+                onChange={(e) => up('taluk', e.target.value)}
+                placeholder="Enter taluk"
+                aria-label="Enter taluk"
+              />
+            )}
+          </div>
           <Field label="Spoke to (name)" required>
             <input className={inputCls} value={details.spokeTo} onChange={(e) => up('spokeTo', e.target.value)} />
           </Field>
@@ -224,9 +322,11 @@ export default function Survey({
           </Field>
         </div>
         <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 p-4 backdrop-blur">
-          <button type="button" className={btnPrimary + ' mx-auto lg:max-w-4xl'} disabled={!ok} onClick={() => goTo(1)}>
-            Start survey
-          </button>
+          <div className="mx-auto w-full max-w-md">
+            <button type="button" className={btnPrimary} disabled={!ok} onClick={() => goTo(1)}>
+              Start survey
+            </button>
+          </div>
         </div>
       </>
     )
@@ -364,7 +464,9 @@ export default function Survey({
           <ScoreRing percent={s.percent} rating={s.rating} />
           <div className="min-w-0">
             <p className="truncate text-base font-bold text-slate-900">{details.hospital}</p>
-            <p className="truncate text-sm text-slate-500">{details.district || 'District not entered'}</p>
+            <p className="truncate text-sm text-slate-500">
+              {[details.taluk, details.district, details.state || 'Karnataka'].filter(Boolean).join(' · ') || 'Location not entered'}
+            </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <RatingBadge rating={s.rating} />
               <span className="text-xs font-semibold text-slate-600">{s.result}</span>

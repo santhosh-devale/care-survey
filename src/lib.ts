@@ -29,7 +29,9 @@ export function fmtDate(value: string): string {
 export function emptyDetails(caller = '', callerRole: CallerRole = 'FSM'): Details {
   return {
     hospital: '',
+    state: 'Karnataka',
     district: '',
+    taluk: '',
     spokeTo: '',
     designation: '',
     phone: '',
@@ -80,7 +82,9 @@ export function toRow(call: Call): Record<string, string | number> {
     Caller: d.caller,
     'Caller role': d.callerRole,
     Hospital: d.hospital,
-    'District / Taluk': d.district,
+    State: d.state || 'Karnataka',
+    District: d.district,
+    Taluk: d.taluk ?? '',
     'Spoke to': d.spokeTo,
     Designation: d.designation,
     Phone: d.phone,
@@ -118,7 +122,9 @@ export function toSubmitPayload(call: Call) {
     caller_name: d.caller,
     caller_role: d.callerRole,
     hospital: d.hospital,
+    state: d.state || 'Karnataka',
     district: d.district,
+    taluk: d.taluk ?? '',
     spoke_to: d.spokeTo,
     designation: d.designation,
     phone: d.phone,
@@ -179,8 +185,9 @@ export function downloadCsv(calls: Call[]): void {
 export function summaryText(call: Call): string {
   const s = score(call.answers)
   const d = call.details
+  const location = [d.taluk, d.district, d.state || 'Karnataka'].filter(Boolean).join(', ')
   const lines = [
-    `CARE forms survey: ${d.hospital}${d.district ? ', ' + d.district : ''}`,
+    `CARE forms survey: ${d.hospital}${location ? `, ${location}` : ''}`,
     `Called by ${d.caller} (${d.callerRole}) on ${fmtDate(d.callAt)}`,
     `Spoke to: ${d.spokeTo}${d.designation ? ' (' + d.designation + ')' : ''}`,
     `Result: ${s.result} | ${s.yes}/${s.applicable} parts filling (${s.percent}%) | ${s.rating}`,

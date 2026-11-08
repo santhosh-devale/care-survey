@@ -80,7 +80,7 @@ export default function Home({
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">CARE Forms Survey</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               {canViewReports
-                ? 'Capture hospital progress and see where teams need support across Karnataka.'
+                ? 'Capture hospital progress and see where teams need support across India.'
                 : 'Record whether ICU forms are being completed and capture the reason when they are not.'}
             </p>
           </div>
@@ -206,7 +206,10 @@ export default function Home({
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-600">H</span>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-slate-900">{c.details.hospital}</p>
-                      <p className="truncate text-xs text-slate-500">{c.details.district ? `${c.details.district} · ` : ''}{fmtDate(c.details.callAt)}</p>
+                      <p className="truncate text-xs text-slate-500">
+                        {[c.details.taluk, c.details.district, c.details.state || 'Karnataka'].filter(Boolean).join(' · ')}
+                        {' · '}{fmtDate(c.details.callAt)}
+                      </p>
                     </div>
                   </div>
                   <RatingBadge rating={score(c.answers).rating} />
