@@ -53,7 +53,7 @@ Rules enforced by the database, not just the app:
 
 ## How a call works
 
-1. **Call details**: hospital, state/UT, district, taluk, who you spoke to, your name and role. Karnataka district and taluk lists are provided; other states/UTs and unlisted Karnataka locations can be entered manually.
+1. **Call details**: choose a hospital from the searchable supplied list or enter another hospital manually, then add its state/UT, district and taluk. Karnataka district and taluk lists are provided; other states/UTs and unlisted Karnataka locations can be entered manually.
 2. **16 parts, one per screen**: Yes or No. Yes moves to the next part. No asks for a reason code (R1 to R8) and optional remarks.
 3. **Summary**: score ring, rating, the parts not being filled, then who is responsible per shift, help needed and follow-up date.
 4. **Save**: on the phone, and to the database. Share the summary on WhatsApp.
@@ -90,6 +90,7 @@ With Supabase connected, the Sheet is an extra copy and a Sheet failure never bl
 | `supabase/schema.sql` | Tables, permission checks, access rules, `submit_call` function, reporting view |
 | `supabase/bootstrap-admin.sql` | One-time setup for the first app administrator |
 | `src/data.ts` | The 16 form parts, reason codes, designations |
+| `src/hospitals.ts` | The supplied hospital suggestions for the survey |
 | `src/locations.ts` | Indian states/UTs and Karnataka district/taluk suggestions |
 | `src/lib.ts` | Scoring, CSV and Sheet row, database payload, WhatsApp text, storage |
 | `src/supabase.ts`, `src/sync.ts` | Supabase client and sending |

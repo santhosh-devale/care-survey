@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DESIGNATIONS, GROUP_STYLE, PARTS, REASONS } from './data'
+import { HOSPITALS, OTHER_HOSPITAL_OPTION } from './hospitals'
 import { INDIAN_STATES_AND_UTS, KARNATAKA_DISTRICTS, KARNATAKA_TALUKS } from './locations'
 import {
   emptyClosing,
@@ -61,6 +62,9 @@ export default function Survey({
     state: draft?.details?.state || 'Karnataka',
     taluk: draft?.details?.taluk ?? '',
   }))
+  const [manualHospital, setManualHospital] = useState(
+    () => !!draft?.details?.hospital && !HOSPITALS.some((hospital) => hospital === draft.details.hospital),
+  )
   const [customDistrict, setCustomDistrict] = useState(() => {
     const state = draft?.details?.state || 'Karnataka'
     const district = draft?.details?.district ?? ''
@@ -207,8 +211,32 @@ export default function Survey({
             <h1 className="text-xl font-bold text-slate-900">Who are you calling?</h1>
             <p className="mt-1 text-sm text-slate-600">Start the call, then record the hospital's answers one part at a time.</p>
           </div>
-          <Field label="Hospital" required>
-            <input className={inputCls} value={details.hospital} onChange={(e) => up('hospital', e.target.value)} placeholder="e.g. District Hospital Mysuru" />
+          <Field
+            label="Hospital"
+            required
+            hint={manualHospital ? 'Enter the hospital name manually; it will be saved as entered.' : 'Search the list or choose “Other / enter manually”.'}
+          >
+            <input
+              className={inputCls}
+              list="care-hospital-options"
+              value={details.hospital}
+              onChange={(e) => {
+                const value = e.target.value
+                if (value === OTHER_HOSPITAL_OPTION) {
+                  up('hospital', '')
+                  setManualHospital(true)
+                  return
+                }
+                up('hospital', value)
+                setManualHospital(!!value && !HOSPITALS.some((hospital) => hospital === value))
+              }}
+              placeholder="Search or enter hospital name"
+              autoComplete="off"
+            />
+            <datalist id="care-hospital-options">
+              {HOSPITALS.map((hospital) => <option key={hospital} value={hospital} />)}
+              <option value={OTHER_HOSPITAL_OPTION} label="Other / enter manually" />
+            </datalist>
           </Field>
           <Field label="State / Union Territory">
             <select
