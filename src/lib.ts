@@ -106,6 +106,49 @@ export function toRow(call: Call): Record<string, string | number> {
   return row
 }
 
+/** The JSON sent to the Supabase submit_call function (see supabase/schema.sql). */
+export function toSubmitPayload(call: Call) {
+  const s = score(call.answers)
+  const d = call.details
+  const c = call.closing
+  const when = new Date(d.callAt)
+  return {
+    client_id: call.id,
+    called_at: Number.isNaN(when.getTime()) ? null : when.toISOString(),
+    caller_name: d.caller,
+    caller_role: d.callerRole,
+    hospital: d.hospital,
+    district: d.district,
+    spoke_to: d.spokeTo,
+    designation: d.designation,
+    phone: d.phone,
+    parts_yes: s.yes,
+    parts_applicable: s.applicable,
+    percent: s.percent,
+    rating: s.rating,
+    overall_result: s.result,
+    responsible: c.responsible,
+    help_needed: c.helpNeeded === '' ? null : c.helpNeeded === 'yes',
+    help_for: c.helpFor,
+    follow_up: c.followUp,
+    remarks: c.remarks,
+    answers: PARTS.flatMap((p) => {
+      const a = call.answers[p.id]
+      if (!a) return []
+      return [
+        {
+          part_id: p.id,
+          part_num: p.num,
+          part_title: p.title,
+          filling: a.filling === 'yes',
+          reason_code: a.filling === 'no' ? (a.reason ?? '') : '',
+          remarks: a.remarks ?? '',
+        },
+      ]
+    }),
+  }
+}
+
 function csvCell(v: string | number): string {
   return `"${String(v).replace(/"/g, '""')}"`
 }

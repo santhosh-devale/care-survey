@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { PARTS } from './data'
-import { downloadCsv, fmtDate, reasonText, score, sendToSheet, summaryText } from './lib'
-import type { Call } from './types'
-import { btnGhost, btnPrimary, Card, RatingBadge } from './ui'
+import { downloadCsv, fmtDate, reasonText, score, summaryText } from './lib'
+import type { Call, SyncTarget } from './types'
+import { btnGhost, btnPrimary, Card, RatingBadge, TARGET_LABEL } from './ui'
 
 interface Props {
   calls: Call[]
-  sheetUrl: string
+  target: SyncTarget | null
+  onSync: (c: Call) => Promise<void>
   onBack: () => void
   onDelete: (id: string) => void
   onSent: (id: string) => void
 }
 
-export default function History({ calls, sheetUrl, onBack, onDelete, onSent }: Props) {
+export default function History({ calls, target, onSync, onBack, onDelete, onSent }: Props) {
   const [openId, setOpenId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
@@ -20,21 +21,27 @@ export default function History({ calls, sheetUrl, onBack, onDelete, onSent }: P
   const unsent = calls.filter((c) => !c.sentAt)
 
   const sendMany = async (list: Call[]) => {
-    if (!sheetUrl || !list.length) return
+    if (!target || !list.length) return
     setBusy(true)
     setNote('')
     let ok = 0
+    let lastError = ''
     for (const c of list) {
       try {
-        await sendToSheet(sheetUrl, c)
+        await onSync(c)
         onSent(c.id)
         ok++
-      } catch {
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : ''
         /* keep going: unsent calls stay marked unsent */
       }
     }
     setBusy(false)
-    setNote(ok === list.length ? `Sent ${ok} call${ok === 1 ? '' : 's'} to the Sheet.` : `Sent ${ok} of ${list.length}. Check your internet and try again.`)
+    setNote(
+      ok === list.length
+        ? `Sent ${ok} call${ok === 1 ? '' : 's'} to ${TARGET_LABEL[target]}.`
+        : `Sent ${ok} of ${list.length}. ${lastError || 'Check your internet and try again.'}`,
+    )
   }
 
   return (
@@ -53,9 +60,13 @@ export default function History({ calls, sheetUrl, onBack, onDelete, onSent }: P
           <button type="button" className={btnGhost} disabled={!calls.length} onClick={() => downloadCsv(calls)}>
             Download all calls as CSV
           </button>
-          {sheetUrl && (
+          {target && (
             <button type="button" className={btnPrimary} disabled={busy || !unsent.length} onClick={() => sendMany(unsent)}>
-              {busy ? 'Sending…' : unsent.length ? `Send ${unsent.length} unsent to Google Sheet` : 'All calls sent to Google Sheet'}
+              {busy
+                ? 'Sending…'
+                : unsent.length
+                  ? `Send ${unsent.length} unsent to ${TARGET_LABEL[target]}`
+                  : `All calls sent to ${TARGET_LABEL[target]}`}
             </button>
           )}
           {note && <p className="rounded-xl bg-slate-100 p-3 text-sm text-slate-700">{note}</p>}
@@ -77,7 +88,7 @@ export default function History({ calls, sheetUrl, onBack, onDelete, onSent }: P
                       {c.details.district ? c.details.district + ' · ' : ''}
                       {fmtDate(c.details.callAt)}
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-400">{c.sentAt ? 'Sent to Sheet' : 'Only on this phone'}</p>
+                    <p className="mt-0.5 text-xs text-slate-400">{c.sentAt ? 'Sent' : 'Only on this phone'}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <RatingBadge rating={s.rating} />

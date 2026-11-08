@@ -1,5 +1,10 @@
 import type { ReactNode } from 'react'
-import type { Rating } from './types'
+import type { Rating, SyncTarget } from './types'
+
+export const TARGET_LABEL: Record<SyncTarget, string> = {
+  database: 'the database',
+  sheet: 'Google Sheet',
+}
 
 export const RATING_STYLE: Record<Rating, { chip: string; ring: string; dot: string }> = {
   Compliant: { chip: 'bg-emerald-100 text-emerald-800', ring: 'stroke-emerald-500', dot: 'bg-emerald-500' },

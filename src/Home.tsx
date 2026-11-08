@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { fmtDate, score } from './lib'
+import { supabaseConfigured } from './supabase'
 import type { Call, CallerRole, Draft } from './types'
 import { btnGhost, btnPrimary, Card, Field, inputCls, RatingBadge, Segmented } from './ui'
 
@@ -8,13 +9,29 @@ interface Props {
   draft: Draft | null
   sheetUrl: string
   caller: { name: string; role: CallerRole }
+  /** Signed-in account, or null when the app runs without Supabase. */
+  email: string | null
   onStart: () => void
   onResume: () => void
   onHistory: () => void
+  onReports: () => void
+  onSignOut: () => void
   onSettings: (s: { sheetUrl: string; name: string; role: CallerRole }) => void
 }
 
-export default function Home({ calls, draft, sheetUrl, caller, onStart, onResume, onHistory, onSettings }: Props) {
+export default function Home({
+  calls,
+  draft,
+  sheetUrl,
+  caller,
+  email,
+  onStart,
+  onResume,
+  onHistory,
+  onReports,
+  onSignOut,
+  onSettings,
+}: Props) {
   const [open, setOpen] = useState(false)
   const [url, setUrl] = useState(sheetUrl)
   const [name, setName] = useState(caller.name)
@@ -52,6 +69,12 @@ export default function Home({ calls, draft, sheetUrl, caller, onStart, onResume
         <button type="button" className={btnPrimary + ' !py-4 !text-lg shadow-lg'} onClick={onStart}>
           {draft ? 'Discard and start a new call' : 'Start a new call'}
         </button>
+
+        {supabaseConfigured && (
+          <button type="button" className={btnGhost} onClick={onReports}>
+            Reports: which forms are filled least
+          </button>
+        )}
 
         <div className="grid grid-cols-4 gap-2 text-center">
           {[
@@ -93,7 +116,13 @@ export default function Home({ calls, draft, sheetUrl, caller, onStart, onResume
           <button type="button" className="flex w-full items-center justify-between text-left" onClick={() => setOpen(!open)}>
             <span>
               <span className="block text-sm font-semibold text-slate-900">Settings</span>
-              <span className="block text-xs text-slate-500">{sheetUrl ? 'Google Sheet connected' : 'Google Sheet not connected'}</span>
+              <span className="block text-xs text-slate-500">
+                {supabaseConfigured
+                  ? `Database connected${email ? ` · ${email}` : ''}`
+                  : sheetUrl
+                    ? 'Google Sheet connected'
+                    : 'Google Sheet not connected'}
+              </span>
             </span>
             <span className="text-slate-400">{open ? '▲' : '▼'}</span>
           </button>
@@ -113,7 +142,10 @@ export default function Home({ calls, draft, sheetUrl, caller, onStart, onResume
                   ]}
                 />
               </Field>
-              <Field label="Google Sheet web app link" hint="Paste the link you get after deploying apps-script/Code.gs. Leave empty to keep calls on this phone only.">
+              <Field
+                label={supabaseConfigured ? 'Google Sheet web app link (optional extra copy)' : 'Google Sheet web app link'}
+                hint="Paste the link you get after deploying apps-script/Code.gs. Leave empty to skip the Sheet."
+              >
                 <input className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://script.google.com/macros/s/…/exec" />
               </Field>
               {urlLooksWrong && <p className="text-xs text-rose-600">This does not look like an Apps Script link. It should start with https://script.google.com/</p>}
@@ -128,6 +160,11 @@ export default function Home({ calls, draft, sheetUrl, caller, onStart, onResume
               >
                 {saved ? 'Saved ✓' : 'Save settings'}
               </button>
+              {supabaseConfigured && email && (
+                <button type="button" className="w-full text-center text-sm font-semibold text-rose-600" onClick={onSignOut}>
+                  Sign out ({email})
+                </button>
+              )}
             </div>
           )}
         </Card>

@@ -7,17 +7,30 @@ import {
   inDays,
   reasonText,
   score,
-  sendToSheet,
   summaryText,
   uid,
 } from './lib'
-import type { Answer, Answers, Call, CallerRole, Closing, Details, Draft } from './types'
-import { btnGhost, btnPrimary, Card, Field, inputCls, RatingBadge, ScoreRing, Segmented } from './ui'
+import type { Answer, Answers, Call, CallerRole, Closing, Details, Draft, SyncTarget } from './types'
+import {
+  btnGhost,
+  btnPrimary,
+  Card,
+  Field,
+  inputCls,
+  RatingBadge,
+  ScoreRing,
+  Segmented,
+  TARGET_LABEL,
+} from './ui'
 
 interface Props {
   draft: Draft | null
   caller: { name: string; role: CallerRole }
-  sheetUrl: string
+  /** Where to send a saved call, or null when there is nowhere to send it right now. */
+  target: SyncTarget | null
+  onSync: (c: Call) => Promise<void>
+  /** Shown under the Save button when target is null. */
+  noSyncHint: string
   onDraft: (d: Draft | null) => void
   onSave: (c: Call) => void
   onSent: (id: string) => void
@@ -25,7 +38,18 @@ interface Props {
   onNew: () => void
 }
 
-export default function Survey({ draft, caller, sheetUrl, onDraft, onSave, onSent, onHome, onNew }: Props) {
+export default function Survey({
+  draft,
+  caller,
+  target,
+  onSync,
+  noSyncHint,
+  onDraft,
+  onSave,
+  onSent,
+  onHome,
+  onNew,
+}: Props) {
   const total = PARTS.length
   const summaryStep = total + 1
 
@@ -58,14 +82,19 @@ export default function Survey({ draft, caller, sheetUrl, onDraft, onSave, onSen
     onSave(call)
     onDraft(null)
     setSaved(call)
-    if (send && sheetUrl) {
+    if (send && target) {
       setBusy(true)
       try {
-        await sendToSheet(sheetUrl, call)
+        await onSync(call)
         onSent(call.id)
-        setNote('Sent to your Google Sheet. Check the Responses tab to confirm it landed.')
-      } catch {
-        setNote('Saved on this phone, but sending failed. Retry from History when you are online.')
+        setNote(
+          target === 'database'
+            ? 'Saved to the database.'
+            : 'Sent to your Google Sheet. Open the Responses tab to confirm it landed.',
+        )
+      } catch (e) {
+        const why = e instanceof Error ? e.message : ''
+        setNote(`Saved on this phone, but sending failed${why ? ` (${why})` : ''}. Retry from History when you are online.`)
       } finally {
         setBusy(false)
       }
@@ -395,10 +424,10 @@ export default function Survey({ draft, caller, sheetUrl, onDraft, onSave, onSen
         </p>
       </div>
       <div className="sticky bottom-0 space-y-2 border-t border-slate-200 bg-white/95 p-4 backdrop-blur">
-        {sheetUrl ? (
+        {target ? (
           <>
             <button type="button" className={btnPrimary} disabled={busy} onClick={() => finish(true)}>
-              {busy ? 'Sending…' : 'Save and send to Google Sheet'}
+              {busy ? 'Sending…' : `Save and send to ${TARGET_LABEL[target]}`}
             </button>
             <button type="button" className={btnGhost} disabled={busy} onClick={() => finish(false)}>
               Save on this phone only
@@ -409,7 +438,7 @@ export default function Survey({ draft, caller, sheetUrl, onDraft, onSave, onSen
             <button type="button" className={btnPrimary} onClick={() => finish(false)}>
               Save call
             </button>
-            <p className="text-center text-xs text-slate-500">Add your Google Sheet link on the home screen to send calls automatically.</p>
+            <p className="text-center text-xs text-slate-500">{noSyncHint}</p>
           </>
         )}
       </div>

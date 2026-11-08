@@ -47,6 +47,9 @@ export interface Draft {
   closing: Closing
 }
 
+/** Where a saved call is sent: the Supabase database, or the optional Google Sheet. */
+export type SyncTarget = 'database' | 'sheet'
+
 export type Rating = 'Compliant' | 'Needs follow-up' | 'Escalate'
 export type Result = 'Started' | 'Partly' | 'Not started'
 
