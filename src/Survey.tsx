@@ -63,7 +63,9 @@ export default function Survey({
     taluk: draft?.details?.taluk ?? '',
   }))
   const [manualHospital, setManualHospital] = useState(
-    () => !!draft?.details?.hospital && !HOSPITALS.some((hospital) => hospital === draft.details.hospital),
+    () =>
+      !!draft?.details?.hospital &&
+      !(draft.details.state === 'Karnataka' && HOSPITALS.some((hospital) => hospital === draft.details.hospital)),
   )
   const [customDistrict, setCustomDistrict] = useState(() => {
     const state = draft?.details?.state || 'Karnataka'
@@ -199,6 +201,7 @@ export default function Survey({
     const up = <K extends keyof Details>(k: K, v: Details[K]) => setDetails({ ...details, [k]: v })
     const ok = !!details.hospital.trim() && !!details.spokeTo.trim() && !!details.caller.trim()
     const isKarnataka = details.state === 'Karnataka'
+    const hospitalOptions = isKarnataka ? HOSPITALS : []
     const districtOptions = isKarnataka ? KARNATAKA_DISTRICTS : []
     const talukOptions = isKarnataka ? KARNATAKA_TALUKS[details.district] ?? [] : []
     const districtIsListed = districtOptions.includes(details.district)
@@ -211,10 +214,39 @@ export default function Survey({
             <h1 className="text-xl font-bold text-slate-900">Who are you calling?</h1>
             <p className="mt-1 text-sm text-slate-600">Start the call, then record the hospital's answers one part at a time.</p>
           </div>
+          <Field label="State / Union Territory" required>
+            <select
+              className={inputCls}
+              value={details.state || 'Karnataka'}
+              onChange={(e) => {
+                const state = e.target.value
+                const clearHospital =
+                  state !== 'Karnataka' && HOSPITALS.some((hospital) => hospital === details.hospital)
+                setDetails({
+                  ...details,
+                  state,
+                  hospital: clearHospital ? '' : details.hospital,
+                  district: '',
+                  taluk: '',
+                })
+                if (clearHospital) setManualHospital(false)
+                setCustomDistrict(false)
+                setCustomTaluk(false)
+              }}
+            >
+              {INDIAN_STATES_AND_UTS.map((state) => <option key={state}>{state}</option>)}
+            </select>
+          </Field>
           <Field
             label="Hospital"
             required
-            hint={manualHospital ? 'Enter the hospital name manually; it will be saved as entered.' : 'Search the list or choose “Other / enter manually”.'}
+            hint={
+              manualHospital
+                ? 'Enter the hospital name manually; it will be saved as entered.'
+                : isKarnataka
+                  ? 'Search the list or choose “Other / enter manually”.'
+                  : 'No supplied hospital list for this state; enter the hospital name manually.'
+            }
           >
             <input
               className={inputCls}
@@ -228,28 +260,15 @@ export default function Survey({
                   return
                 }
                 up('hospital', value)
-                setManualHospital(!!value && !HOSPITALS.some((hospital) => hospital === value))
+                setManualHospital(!!value && !hospitalOptions.some((hospital) => hospital === value))
               }}
               placeholder="Search or enter hospital name"
               autoComplete="off"
             />
             <datalist id="care-hospital-options">
-              {HOSPITALS.map((hospital) => <option key={hospital} value={hospital} />)}
-              <option value={OTHER_HOSPITAL_OPTION} label="Other / enter manually" />
+              {hospitalOptions.map((hospital) => <option key={hospital} value={hospital} />)}
+              {isKarnataka && <option value={OTHER_HOSPITAL_OPTION} label="Other / enter manually" />}
             </datalist>
-          </Field>
-          <Field label="State / Union Territory">
-            <select
-              className={inputCls}
-              value={details.state || 'Karnataka'}
-              onChange={(e) => {
-                setDetails({ ...details, state: e.target.value, district: '', taluk: '' })
-                setCustomDistrict(false)
-                setCustomTaluk(false)
-              }}
-            >
-              {INDIAN_STATES_AND_UTS.map((state) => <option key={state}>{state}</option>)}
-            </select>
           </Field>
           <div className="block">
             <label className="block">
