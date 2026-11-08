@@ -26,7 +26,7 @@ export default function Login() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700 text-2xl font-bold text-white shadow-lg shadow-emerald-900/15">
             C
           </div>
-          <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">10BedICU TeleICU</p>
+          <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">TeleICU</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">CARE Forms Survey</h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">Sign in with the account your administrator created for you.</p>
         </div>
