@@ -57,13 +57,22 @@ export default function Home({
     <>
       <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3.5 sm:px-6 lg:px-10">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-lg font-bold text-white">C</div>
+          <img
+            src="/10bedicu-logo.png"
+            alt="10BedICU"
+            className="h-10 w-24 shrink-0 object-contain"
+          />
           <div>
             <p className="text-sm font-bold text-slate-900">CARE Forms</p>
             <p className="text-xs text-slate-500">10BedICU TeleICU</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <img
+            src="/egov-foundation.png"
+            alt="eGov Foundation"
+            className="h-6 w-16 shrink-0 object-contain sm:h-8 sm:w-auto"
+          />
           {email && <span className="hidden max-w-64 truncate rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 sm:inline">{email}</span>}
           {supabaseConfigured && email && (
             <button type="button" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-rose-700" onClick={onSignOut}>
