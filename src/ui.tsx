@@ -21,9 +21,9 @@ export const btnPrimary =
 export const btnGhost =
   'block w-full rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-center text-base font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50'
 
-export function Shell({ children }: { children: ReactNode }) {
+export function Shell({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-slate-50 sm:shadow-xl">
+    <div className={`mx-auto flex min-h-dvh w-full flex-col bg-slate-50 ${wide ? 'max-w-md lg:max-w-7xl lg:shadow-none' : 'max-w-md sm:shadow-xl'}`}>
       {children}
     </div>
   )

@@ -105,7 +105,7 @@ export default function Survey({
   if (saved) {
     const s = score(saved.answers)
     return (
-      <div className="flex flex-1 flex-col px-5 pb-8 pt-10">
+      <div className="mx-auto flex w-full flex-1 flex-col px-5 pb-8 pt-10 lg:max-w-3xl">
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600">
           ✓
         </div>
@@ -142,7 +142,7 @@ export default function Survey({
 
   const header = (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 pb-3 pt-4 backdrop-blur">
-      <div className="flex items-center justify-between">
+      <div className="mx-auto flex max-w-4xl items-center justify-between">
         <button
           type="button"
           onClick={() => (step === 0 ? onHome() : setStep(step - 1))}
@@ -161,7 +161,7 @@ export default function Survey({
           Exit
         </button>
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200">
+      <div className="mx-auto mt-3 h-1.5 max-w-4xl overflow-hidden rounded-full bg-slate-200">
         <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
       </div>
     </header>
@@ -174,8 +174,8 @@ export default function Survey({
     return (
       <>
         {header}
-        <div className="flex-1 space-y-4 px-4 py-5">
-          <div>
+        <div className="mx-auto grid w-full flex-1 gap-4 px-4 py-5 lg:max-w-4xl lg:grid-cols-2 lg:gap-x-6">
+          <div className="lg:col-span-2">
             <h1 className="text-xl font-bold text-slate-900">Who are you calling?</h1>
             <p className="mt-1 text-sm text-slate-600">Start the call, then record the hospital's answers one part at a time.</p>
           </div>
@@ -218,7 +218,7 @@ export default function Survey({
           </Field>
         </div>
         <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 p-4 backdrop-blur">
-          <button type="button" className={btnPrimary} disabled={!ok} onClick={() => goTo(1)}>
+          <button type="button" className={btnPrimary + ' mx-auto lg:max-w-4xl'} disabled={!ok} onClick={() => goTo(1)}>
             Start survey
           </button>
         </div>
@@ -243,7 +243,7 @@ export default function Survey({
     return (
       <>
         {header}
-        <div className="flex-1 space-y-5 px-4 py-5">
+        <div className="mx-auto w-full max-w-4xl flex-1 space-y-5 px-4 py-5">
           <div>
             <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${GROUP_STYLE[part.group] ?? 'bg-slate-100 text-slate-700'}`}>
               {part.group}
@@ -337,7 +337,7 @@ export default function Survey({
           )}
         </div>
         <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 p-4 backdrop-blur">
-          <button type="button" className={btnPrimary} disabled={!canNext} onClick={() => goTo(step + 1)}>
+          <button type="button" className={btnPrimary + ' mx-auto lg:max-w-4xl'} disabled={!canNext} onClick={() => goTo(step + 1)}>
             {step === total ? 'See summary' : 'Next part'}
           </button>
         </div>
@@ -353,7 +353,7 @@ export default function Survey({
   return (
     <>
       {header}
-      <div className="flex-1 space-y-5 px-4 py-5">
+      <div className="mx-auto w-full max-w-4xl flex-1 space-y-5 px-4 py-5">
         <Card className="flex items-center gap-4">
           <ScoreRing percent={s.percent} rating={s.rating} />
           <div className="min-w-0">
@@ -390,8 +390,8 @@ export default function Survey({
           </div>
         )}
 
-        <div className="space-y-4">
-          <h2 className="text-sm font-semibold text-slate-700">Close the call</h2>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <h2 className="text-sm font-semibold text-slate-700 lg:col-span-2">Close the call</h2>
           <Field label="Person responsible for the forms in each shift">
             <input className={inputCls} value={closing.responsible} onChange={(e) => upC('responsible', e.target.value)} placeholder="Name and designation" />
           </Field>
@@ -426,16 +426,16 @@ export default function Survey({
       <div className="sticky bottom-0 space-y-2 border-t border-slate-200 bg-white/95 p-4 backdrop-blur">
         {target ? (
           <>
-            <button type="button" className={btnPrimary} disabled={busy} onClick={() => finish(true)}>
+            <button type="button" className={btnPrimary + ' mx-auto lg:max-w-4xl'} disabled={busy} onClick={() => finish(true)}>
               {busy ? 'Sending…' : `Save and send to ${TARGET_LABEL[target]}`}
             </button>
-            <button type="button" className={btnGhost} disabled={busy} onClick={() => finish(false)}>
+            <button type="button" className={btnGhost + ' mx-auto lg:max-w-4xl'} disabled={busy} onClick={() => finish(false)}>
               Save on this phone only
             </button>
           </>
         ) : (
           <>
-            <button type="button" className={btnPrimary} onClick={() => finish(false)}>
+            <button type="button" className={btnPrimary + ' mx-auto lg:max-w-4xl'} onClick={() => finish(false)}>
               Save call
             </button>
             <p className="text-center text-xs text-slate-500">{noSyncHint}</p>

@@ -11,10 +11,15 @@ interface Props {
   caller: { name: string; role: CallerRole }
   /** Signed-in account, or null when the app runs without Supabase. */
   email: string | null
+  canSubmitSurveys: boolean
+  canViewReports: boolean
+  canExport: boolean
+  canManageUsers: boolean
   onStart: () => void
   onResume: () => void
   onHistory: () => void
   onReports: () => void
+  onManageUsers: () => void
   onSignOut: () => void
   onSettings: (s: { sheetUrl: string; name: string; role: CallerRole }) => void
 }
@@ -25,10 +30,15 @@ export default function Home({
   sheetUrl,
   caller,
   email,
+  canSubmitSurveys,
+  canViewReports,
+  canExport,
+  canManageUsers,
   onStart,
   onResume,
   onHistory,
   onReports,
+  onManageUsers,
   onSignOut,
   onSettings,
 }: Props) {
@@ -45,16 +55,18 @@ export default function Home({
 
   return (
     <>
-      <div className="bg-gradient-to-br from-emerald-600 to-teal-700 px-5 pb-10 pt-10 text-white">
+      <div className="bg-gradient-to-br from-emerald-600 to-teal-700 px-5 pb-10 pt-10 text-white lg:px-10 lg:pb-12 lg:pt-12">
         <p className="text-xs font-semibold uppercase tracking-widest text-emerald-100">10BedICU TeleICU</p>
-        <h1 className="mt-2 text-3xl font-bold leading-tight">CARE Forms Survey</h1>
+        <h1 className="mt-2 text-3xl font-bold leading-tight lg:text-4xl">CARE Forms Survey</h1>
         <p className="mt-2 text-sm text-emerald-50">
-          Call a hospital, record whether the ICU forms are being filled, and note the reason if not.
+          {canViewReports
+            ? 'Record hospital surveys and review Karnataka-wide hospital performance.'
+            : 'Call a hospital, record whether the ICU forms are being filled, and note the reason if not.'}
         </p>
       </div>
 
-      <div className="-mt-6 flex-1 space-y-4 px-4 pb-8">
-        {draft && (
+      <div className="-mt-6 flex-1 space-y-4 px-4 pb-8 sm:px-6 lg:mt-0 lg:space-y-6 lg:px-8 lg:pt-6">
+        {canSubmitSurveys && draft && (
           <Card className="border-amber-200 bg-amber-50">
             <p className="text-sm font-semibold text-amber-900">Call in progress</p>
             <p className="mt-0.5 text-sm text-amber-800">
@@ -66,16 +78,38 @@ export default function Home({
           </Card>
         )}
 
-        <button type="button" className={btnPrimary + ' !py-4 !text-lg shadow-lg'} onClick={onStart}>
-          {draft ? 'Discard and start a new call' : 'Start a new call'}
-        </button>
+        <div className="grid gap-3 lg:grid-cols-3">
+          {canSubmitSurveys && (
+            <button type="button" className={btnPrimary + ' !py-4 !text-lg shadow-lg'} onClick={onStart}>
+              {draft ? 'Discard and start a new call' : 'Start a new call'}
+            </button>
+          )}
 
-        {supabaseConfigured && (
-          <button type="button" className={btnGhost} onClick={onReports}>
-            Reports: which forms are filled least
-          </button>
+          {supabaseConfigured && (canViewReports || canExport) && (
+            <button type="button" className={btnGhost + ' hidden lg:block'} onClick={onReports}>
+              {canViewReports ? 'Open analytics dashboard' : 'Export survey data'}
+            </button>
+          )}
+
+          {supabaseConfigured && canManageUsers && (
+            <button type="button" className={btnGhost + ' hidden lg:block'} onClick={onManageUsers}>
+              Manage user access
+            </button>
+          )}
+        </div>
+
+        {!canSubmitSurveys && !canViewReports && !canManageUsers && (
+          <Card className="border-amber-200 bg-amber-50">
+            <p className="text-sm text-amber-900">Your account does not have app permissions yet. Ask an administrator to assign access.</p>
+          </Card>
+        )}
+        {(canViewReports || canExport) && (
+          <Card className="border-emerald-200 bg-emerald-50 lg:hidden">
+            <p className="text-sm text-emerald-900">Dashboard and export tools are available on desktop. Survey entry remains available here if your account has survey permission.</p>
+          </Card>
         )}
 
+        {supabaseConfigured && calls.length > 0 && <p className="text-xs font-medium text-slate-500">Saved on this device</p>}
         <div className="grid grid-cols-4 gap-2 text-center">
           {[
             { label: 'Hospitals', value: hospitals },

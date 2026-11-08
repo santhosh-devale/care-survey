@@ -8,10 +8,24 @@ import Reports from './Reports'
 import { supabase, supabaseConfigured } from './supabase'
 import Survey from './Survey'
 import { syncCall } from './sync'
-import type { Call, CallerRole, Draft, SyncTarget } from './types'
+import type { Call, CallerRole, Draft, SyncTarget, UserPermissions } from './types'
 import { Shell } from './ui'
+import UserAccess from './UserAccess'
 
-type Screen = 'home' | 'survey' | 'history' | 'reports'
+type Screen = 'home' | 'survey' | 'history' | 'reports' | 'users'
+
+const NO_PERMISSIONS: UserPermissions = {
+  can_submit_surveys: false,
+  can_view_reports: false,
+  can_export: false,
+  can_manage_users: false,
+}
+
+const LOCAL_PERMISSIONS: UserPermissions = {
+  ...NO_PERMISSIONS,
+  can_submit_surveys: true,
+  can_export: true,
+}
 
 const K = {
   calls: 'care-survey:calls',
@@ -35,6 +49,12 @@ export default function App() {
   const [surveyKey, setSurveyKey] = useState(0)
   const [session, setSession] = useState<Session | null>(null)
   const [authReady, setAuthReady] = useState(!supabaseConfigured)
+  const [permissions, setPermissions] = useState<UserPermissions | null>(
+    supabaseConfigured ? null : LOCAL_PERMISSIONS,
+  )
+  const [permissionUserId, setPermissionUserId] = useState<string | null>(null)
+  const [permissionError, setPermissionError] = useState('')
+  const [permissionRevision, setPermissionRevision] = useState(0)
 
   useEffect(() => save(K.calls, calls), [calls])
   useEffect(() => save(K.draft, draft), [draft])
@@ -51,6 +71,32 @@ export default function App() {
     const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s))
     return () => data.subscription.unsubscribe()
   }, [])
+
+  const userId = session?.user.id
+  useEffect(() => {
+    if (!supabaseConfigured || !supabase || !userId) return
+    let active = true
+    void supabase
+      .from('user_permissions')
+      .select('can_submit_surveys, can_view_reports, can_export, can_manage_users')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return
+        if (error) {
+          setPermissionError(error.message)
+          setPermissions(null)
+        } else {
+          setPermissionError('')
+          setPermissions(data ?? NO_PERMISSIONS)
+        }
+        setPermissionUserId(userId)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [userId, permissionRevision])
 
   // An untouched first screen is not worth keeping as a "call in progress".
   const onDraft = useCallback((d: Draft | null) => {
@@ -79,15 +125,18 @@ export default function App() {
   const onSent = (id: string) =>
     setCalls((prev) => prev.map((c) => (c.id === id ? { ...c, sentAt: new Date().toISOString() } : c)))
 
-  // Where saved calls go: the database when Supabase is set up, otherwise the optional Google Sheet.
-  const target: SyncTarget | null = supabaseConfigured ? 'database' : sheetUrl ? 'sheet' : null
+  const access = permissions ?? NO_PERMISSIONS
+  // Where saved calls go: the database when allowed, otherwise the optional Google Sheet in local mode.
+  const target: SyncTarget | null = supabaseConfigured
+    ? access.can_submit_surveys ? 'database' : null
+    : sheetUrl ? 'sheet' : null
   const onSync = useCallback((c: Call) => syncCall(c, sheetUrl), [sheetUrl])
   const noSyncHint = 'Add your Google Sheet link in Settings to send calls automatically.'
 
-  if (supabaseConfigured && !authReady) {
+  if (supabaseConfigured && (!authReady || (!!session && permissionUserId !== session.user.id))) {
     return (
       <Shell>
-        <p className="m-auto text-sm text-slate-500">Loading…</p>
+        <p className="m-auto text-sm text-slate-500">Loading account access…</p>
       </Shell>
     )
   }
@@ -100,8 +149,35 @@ export default function App() {
     )
   }
 
+  if (supabaseConfigured && session && permissionUserId === session.user.id && permissionError) {
+    return (
+      <Shell>
+        <div className="m-auto space-y-4 p-6 text-center">
+          <p role="alert" className="text-sm text-rose-700">Could not load your permissions: {permissionError}</p>
+          <button type="button" className="text-sm font-semibold text-emerald-700" onClick={() => void supabase?.auth.signOut()}>
+            Sign out and try again
+          </button>
+        </div>
+      </Shell>
+    )
+  }
+
+  if (supabaseConfigured && !access.can_submit_surveys && !access.can_view_reports && !access.can_export && !access.can_manage_users) {
+    return (
+      <Shell>
+        <div className="m-auto space-y-4 p-6 text-center">
+          <h1 className="text-xl font-bold text-slate-900">Access not assigned</h1>
+          <p className="text-sm text-slate-600">Your account is signed in, but an administrator has not assigned app permissions yet.</p>
+          <button type="button" className="text-sm font-semibold text-emerald-700" onClick={() => void supabase?.auth.signOut()}>
+            Sign out
+          </button>
+        </div>
+      </Shell>
+    )
+  }
+
   return (
-    <Shell>
+    <Shell wide={screen === 'home' || screen === 'survey' || screen === 'reports' || screen === 'users'}>
       {screen === 'home' && (
         <Home
           calls={calls}
@@ -109,6 +185,10 @@ export default function App() {
           sheetUrl={sheetUrl}
           caller={caller}
           email={session?.user.email ?? null}
+          canSubmitSurveys={access.can_submit_surveys}
+          canViewReports={access.can_view_reports}
+          canExport={access.can_export}
+          canManageUsers={access.can_manage_users}
           onStart={startNew}
           onResume={() => {
             setResume(true)
@@ -117,6 +197,7 @@ export default function App() {
           }}
           onHistory={() => setScreen('history')}
           onReports={() => setScreen('reports')}
+          onManageUsers={() => setScreen('users')}
           onSignOut={() => void supabase?.auth.signOut()}
           onSettings={(s) => {
             setSheetUrl(s.sheetUrl)
@@ -150,9 +231,36 @@ export default function App() {
           onBack={() => setScreen('home')}
           onDelete={(id) => setCalls((prev) => prev.filter((c) => c.id !== id))}
           onSent={onSent}
+          canExport={access.can_export}
         />
       )}
-      {screen === 'reports' && <Reports onBack={() => setScreen('home')} />}
+      {screen === 'reports' && (access.can_view_reports || access.can_export) && (
+        <Reports
+          onBack={() => setScreen('home')}
+          permissions={access}
+        />
+      )}
+      {screen === 'users' && access.can_manage_users && (
+        <UserAccess
+          onBack={() => setScreen('home')}
+          onPermissionsChanged={() => {
+            setPermissionUserId(null)
+            setPermissionRevision((revision) => revision + 1)
+          }}
+        />
+      )}
+      {screen === 'reports' && !access.can_view_reports && !access.can_export && (
+        <div className="m-auto space-y-3 p-6 text-center">
+          <p className="text-sm text-slate-600">Your dashboard or export permission has been removed.</p>
+          <button type="button" className="text-sm font-semibold text-emerald-700" onClick={() => setScreen('home')}>Back to home</button>
+        </div>
+      )}
+      {screen === 'users' && !access.can_manage_users && (
+        <div className="m-auto space-y-3 p-6 text-center">
+          <p className="text-sm text-slate-600">Your user-management permission has been removed.</p>
+          <button type="button" className="text-sm font-semibold text-emerald-700" onClick={() => setScreen('home')}>Back to home</button>
+        </div>
+      )}
     </Shell>
   )
 }

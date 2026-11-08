@@ -47,6 +47,19 @@ export interface Draft {
   closing: Closing
 }
 
+export interface UserPermissions {
+  can_submit_surveys: boolean
+  can_view_reports: boolean
+  can_export: boolean
+  can_manage_users: boolean
+}
+
+export interface UserPermissionRow extends UserPermissions {
+  user_id: string
+  email: string
+  updated_at: string
+}
+
 /** Where a saved call is sent: the Supabase database, or the optional Google Sheet. */
 export type SyncTarget = 'database' | 'sheet'
 

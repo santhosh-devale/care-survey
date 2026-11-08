@@ -11,9 +11,10 @@ interface Props {
   onBack: () => void
   onDelete: (id: string) => void
   onSent: (id: string) => void
+  canExport: boolean
 }
 
-export default function History({ calls, target, onSync, onBack, onDelete, onSent }: Props) {
+export default function History({ calls, target, onSync, onBack, onDelete, onSent, canExport }: Props) {
   const [openId, setOpenId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
@@ -57,9 +58,11 @@ export default function History({ calls, target, onSync, onBack, onDelete, onSen
         <h1 className="text-xl font-bold text-slate-900">History and export</h1>
 
         <div className="space-y-2">
-          <button type="button" className={btnGhost} disabled={!calls.length} onClick={() => downloadCsv(calls)}>
-            Download all calls as CSV
-          </button>
+          {canExport && (
+            <button type="button" className={btnGhost} disabled={!calls.length} onClick={() => downloadCsv(calls)}>
+              Download calls saved on this device as CSV
+            </button>
+          )}
           {target && (
             <button type="button" className={btnPrimary} disabled={busy || !unsent.length} onClick={() => sendMany(unsent)}>
               {busy
