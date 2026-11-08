@@ -1,16 +1,17 @@
 import type { Session } from '@supabase/supabase-js'
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import History from './History'
 import Home from './Home'
 import { load, save } from './lib'
 import Login from './Login'
-import Reports from './Reports'
 import { supabase, supabaseConfigured } from './supabase'
 import Survey from './Survey'
 import { syncCall } from './sync'
 import type { Call, CallerRole, Draft, SyncTarget, UserPermissions } from './types'
 import { Shell } from './ui'
-import UserAccess from './UserAccess'
+
+const Reports = lazy(() => import('./Reports'))
+const UserAccess = lazy(() => import('./UserAccess'))
 
 type Screen = 'home' | 'survey' | 'history' | 'reports' | 'users'
 
@@ -235,19 +236,20 @@ export default function App() {
         />
       )}
       {screen === 'reports' && (access.can_view_reports || access.can_export) && (
-        <Reports
-          onBack={() => setScreen('home')}
-          permissions={access}
-        />
+        <Suspense fallback={<p className="m-auto p-6 text-sm text-slate-500">Loading dashboard…</p>}>
+          <Reports onBack={() => setScreen('home')} permissions={access} />
+        </Suspense>
       )}
       {screen === 'users' && access.can_manage_users && (
-        <UserAccess
-          onBack={() => setScreen('home')}
-          onPermissionsChanged={() => {
-            setPermissionUserId(null)
-            setPermissionRevision((revision) => revision + 1)
-          }}
-        />
+        <Suspense fallback={<p className="m-auto p-6 text-sm text-slate-500">Loading user access…</p>}>
+          <UserAccess
+            onBack={() => setScreen('home')}
+            onPermissionsChanged={() => {
+              setPermissionUserId(null)
+              setPermissionRevision((revision) => revision + 1)
+            }}
+          />
+        </Suspense>
       )}
       {screen === 'reports' && !access.can_view_reports && !access.can_export && (
         <div className="m-auto space-y-3 p-6 text-center">

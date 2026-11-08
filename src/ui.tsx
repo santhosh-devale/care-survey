@@ -13,17 +13,17 @@ export const RATING_STYLE: Record<Rating, { chip: string; ring: string; dot: str
 }
 
 export const inputCls =
-  'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100'
+  'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100'
 
 export const btnPrimary =
-  'w-full rounded-2xl bg-emerald-600 px-5 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none'
+  'w-full rounded-xl bg-emerald-700 px-5 py-3.5 text-base font-semibold text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none'
 
 export const btnGhost =
-  'block w-full rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-center text-base font-semibold text-slate-700 transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50'
+  'block w-full rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-center text-base font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50'
 
 export function Shell({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
-    <div className={`mx-auto flex min-h-dvh w-full flex-col bg-slate-50 ${wide ? 'max-w-md lg:max-w-7xl lg:shadow-none' : 'max-w-md sm:shadow-xl'}`}>
+    <div className={`mx-auto flex min-h-dvh w-full flex-col bg-slate-50 ${wide ? 'max-w-md lg:max-w-[1440px] lg:shadow-none' : 'max-w-md sm:shadow-xl'}`}>
       {children}
     </div>
   )
@@ -31,7 +31,7 @@ export function Shell({ children, wide = false }: { children: ReactNode; wide?: 
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}>
+    <div className={`rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)] ${className}`}>
       {children}
     </div>
   )

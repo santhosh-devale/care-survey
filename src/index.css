@@ -11,11 +11,38 @@ html {
 
 body {
   margin: 0;
-  background-color: #e2e8f0;
+  background-color: #f1f5f9;
   color: #1e293b;
   -webkit-font-smoothing: antialiased;
 }
 
 #root {
   min-height: 100dvh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #a7f3d0;
+  color: #064e3b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

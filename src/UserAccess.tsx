@@ -102,27 +102,37 @@ export default function UserAccess({
 
   return (
     <>
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
-        <button type="button" onClick={onBack} className="-ml-2 rounded-lg px-2 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-          ← Home
-        </button>
-        <button type="button" onClick={() => { setLoading(true); void loadUsers() }} disabled={loading} className="text-sm font-semibold text-emerald-700 disabled:opacity-50">
-          {loading ? 'Loading…' : 'Refresh'}
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3.5 backdrop-blur sm:px-6 lg:px-10">
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50" aria-label="Back to home">←</button>
+          <div>
+            <p className="text-sm font-bold text-slate-900">CARE Forms</p>
+            <p className="text-xs text-slate-500">Team administration</p>
+          </div>
+        </div>
+        <button type="button" onClick={() => { setLoading(true); void loadUsers() }} disabled={loading} className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-800 disabled:opacity-50">
+          {loading ? 'Refreshing…' : 'Refresh users'}
         </button>
       </header>
 
-      <main className="flex-1 space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:gap-8 lg:px-10 lg:py-9">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">User access</h1>
-          <p className="mt-1 text-sm text-slate-600">Create accounts in Supabase first, then assign permissions here.</p>
+          <p className="text-sm font-semibold text-emerald-800">Administration</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Manage team access</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Give each team member only the tools they need. Accounts are created in Supabase; permissions are managed here.</p>
         </div>
 
         {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
         {message && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}
 
-        <Card>
-          <h2 className="text-base font-semibold text-slate-900">Add an existing Supabase user</h2>
+        <Card className="!p-5 sm:!p-6">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg text-emerald-800">+</span>
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Add a team member</h2>
           <p className="mt-1 text-sm text-slate-600">The account must already exist under Supabase Authentication → Users.</p>
+            </div>
+          </div>
           <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(16rem,1fr)_2fr_auto] lg:items-end">
             <label className="block text-sm font-medium text-slate-700">
               Email
@@ -143,7 +153,12 @@ export default function UserAccess({
         </Card>
 
         <section>
-          <h2 className="mb-3 text-base font-semibold text-slate-900">Assigned users</h2>
+          <div className="mb-3 flex items-end justify-between">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Team members</h2>
+              <p className="mt-0.5 text-xs text-slate-500">{users.length} account(s) with app permissions</p>
+            </div>
+          </div>
           {loading ? (
             <p className="py-8 text-center text-sm text-slate-500">Loading users…</p>
           ) : users.length === 0 ? (

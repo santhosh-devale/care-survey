@@ -150,8 +150,8 @@ export default function Survey({
         >
           ← {step === 0 ? 'Home' : 'Back'}
         </button>
-        <span className="text-sm font-medium text-slate-500">
-          {step === 0 ? 'Call details' : step === summaryStep ? 'Summary' : `Part ${step} of ${total}`}
+        <span className="text-sm font-semibold text-slate-700">
+          {step === 0 ? 'New survey' : step === summaryStep ? 'Review survey' : 'CARE forms'}
         </span>
         <button
           type="button"
@@ -161,8 +161,14 @@ export default function Survey({
           Exit
         </button>
       </div>
-      <div className="mx-auto mt-3 h-1.5 max-w-4xl overflow-hidden rounded-full bg-slate-200">
-        <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+      <div className="mx-auto mt-3 max-w-4xl">
+        <div className="mb-1.5 flex justify-between text-[11px] font-medium text-slate-500">
+          <span>{step === 0 ? 'Hospital details' : step === summaryStep ? 'Final review' : `Part ${step} of ${total}`}</span>
+          <span>{pct}% complete</span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-full rounded-full bg-emerald-600 transition-all" style={{ width: `${pct}%` }} />
+        </div>
       </div>
     </header>
   )

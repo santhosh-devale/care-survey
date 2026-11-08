@@ -234,31 +234,36 @@ export default function Reports({
 
   return (
     <>
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:px-6 lg:px-8">
-        <button type="button" onClick={onBack} className="-ml-2 rounded-lg px-2 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-100">
-          ← Home
-        </button>
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3.5 backdrop-blur sm:px-6 lg:px-10">
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={onBack} className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50" aria-label="Back to home">←</button>
+          <div>
+            <p className="text-sm font-bold text-slate-900">CARE Forms</p>
+            <p className="text-xs text-slate-500">Karnataka operations</p>
+          </div>
+        </div>
         <button
           type="button"
           onClick={() => { setLoading(true); void load() }}
           disabled={loading}
-          className="-mr-2 rounded-lg px-2 py-1 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+          className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-800 disabled:opacity-50"
         >
-          {loading ? 'Loading…' : 'Refresh'}
+          <span aria-hidden="true" className="mr-1.5">↻</span>{loading ? 'Refreshing…' : 'Refresh data'}
         </button>
       </header>
 
-      <main className="flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+      <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:gap-8 lg:px-10 lg:py-9">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{canReadDashboard ? 'Karnataka CARE dashboard' : 'Export survey data'}</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              {canReadDashboard ? 'Current hospital status uses each hospital’s latest call.' : 'Download survey records for analysis.'}
+            <p className="text-sm font-semibold text-emerald-800">{canReadDashboard ? 'Performance overview' : 'Data tools'}</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{canReadDashboard ? 'Hospital analytics' : 'Export survey data'}</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {canReadDashboard ? 'Spot low-compliance areas, follow-ups, and repeated problems across Karnataka.' : 'Download survey records for analysis.'}
             </p>
           </div>
           {permissions.can_export && (
-            <button type="button" onClick={() => downloadRows(report.calls)} disabled={!report.calls.length || loading} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
-              Export {report.calls.length} calls to CSV
+            <button type="button" onClick={() => downloadRows(report.calls)} disabled={!report.calls.length || loading} className="inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 disabled:opacity-50">
+              <span aria-hidden="true">↓</span> Export {report.calls.length} calls
             </button>
           )}
         </div>
@@ -269,30 +274,43 @@ export default function Reports({
 
         {rows && rows.length > 0 && (
           <>
-            <Card className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {canReadDashboard && (
-                <label className="text-sm font-medium text-slate-700">
-                  Hospital search
-                  <input className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" value={hospitalSearch} onChange={(event) => setHospitalSearch(event.target.value)} placeholder="Search hospital name" />
+            <Card className="!p-4 sm:!p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Filter survey data</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">Adjust the date range and hospital area.</p>
+                </div>
+                {(district || hospitalSearch || startDate || endDate) && (
+                  <button type="button" className="text-xs font-semibold text-emerald-800 hover:text-emerald-950" onClick={() => { setDistrict(''); setHospitalSearch(''); setStartDate(''); setEndDate('') }}>
+                    Clear filters
+                  </button>
+                )}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {canReadDashboard && (
+                  <label className="text-xs font-semibold text-slate-600">
+                    Hospital
+                    <input className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" value={hospitalSearch} onChange={(event) => setHospitalSearch(event.target.value)} placeholder="Search hospital name" />
+                  </label>
+                )}
+                {canReadDashboard && (
+                  <label className="text-xs font-semibold text-slate-600">
+                    District
+                    <select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" value={district} onChange={(event) => setDistrict(event.target.value)}>
+                      <option value="">All districts</option>
+                      {districts.map((item) => <option key={item}>{item}</option>)}
+                    </select>
+                  </label>
+                )}
+                <label className="text-xs font-semibold text-slate-600">
+                  From date
+                  <input className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
                 </label>
-              )}
-              {canReadDashboard && (
-                <label className="text-sm font-medium text-slate-700">
-                  District
-                  <select className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-normal" value={district} onChange={(event) => setDistrict(event.target.value)}>
-                    <option value="">All districts</option>
-                    {districts.map((item) => <option key={item}>{item}</option>)}
-                  </select>
+                <label className="text-xs font-semibold text-slate-600">
+                  To date
+                  <input className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
                 </label>
-              )}
-              <label className="text-sm font-medium text-slate-700">
-                From date
-                <input className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
-              </label>
-              <label className="text-sm font-medium text-slate-700">
-                To date
-                <input className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
-              </label>
+              </div>
             </Card>
 
             {canReadDashboard && (
@@ -304,10 +322,11 @@ export default function Reports({
                     { label: 'Average current score', value: `${report.average}%`, tone: 'text-slate-900' },
                     { label: 'Need follow-up', value: report.ratings['Needs follow-up'], tone: 'text-amber-700' },
                     { label: 'Escalate', value: report.ratings.Escalate, tone: 'text-rose-700' },
-                  ].map((item) => (
-                    <Card key={item.label} className="!p-4">
-                      <p className="text-sm text-slate-500">{item.label}</p>
-                      <p className={`mt-1 text-3xl font-bold ${item.tone}`}>{item.value}</p>
+                  ].map((item, index) => (
+                    <Card key={item.label} className={`relative overflow-hidden !p-5 ${index === 3 ? 'border-amber-100' : index === 4 ? 'border-rose-100' : ''}`}>
+                      <span className={`absolute right-4 top-4 h-2.5 w-2.5 rounded-full ${index === 3 ? 'bg-amber-400' : index === 4 ? 'bg-rose-400' : 'bg-emerald-400'}`} />
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</p>
+                      <p className={`mt-3 text-3xl font-bold tracking-tight ${item.tone}`}>{item.value}</p>
                     </Card>
                   ))}
                 </section>
@@ -320,7 +339,9 @@ export default function Reports({
                         <p className="text-sm text-slate-500">No dated surveys in this period.</p>
                       ) : report.trends.map((trend) => (
                         <div key={trend.month} className="grid grid-cols-[5.5rem_1fr_6rem] items-center gap-3 text-sm">
-                          <span className="text-slate-600">{trend.month}</span>
+                          <span className="font-medium text-slate-600">
+                            {new Date(`${trend.month}-01T00:00:00`).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                          </span>
                           <div className="h-3 overflow-hidden rounded-full bg-slate-100">
                             <div className="h-full rounded-full bg-emerald-600" style={{ width: `${(trend.calls / maxCalls) * 100}%` }} />
                           </div>
