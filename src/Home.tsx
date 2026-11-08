@@ -118,7 +118,7 @@ export default function Home({
         )}
 
           {canSubmitSurveys && (
-            <button type="button" className="group flex min-h-40 flex-col items-start justify-between rounded-2xl bg-emerald-800 p-5 text-left text-white shadow-lg shadow-emerald-950/10 transition hover:-translate-y-0.5 hover:bg-emerald-900 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200" onClick={onStart}>
+            <button type="button" className="group flex min-h-40 flex-col items-start justify-between rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-950 p-5 text-left text-white shadow-lg shadow-emerald-950/10 transition hover:-translate-y-0.5 hover:from-emerald-800 hover:to-emerald-950 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200" onClick={onStart}>
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-2xl">+</span>
               <span>
                 <span className="block text-lg font-bold">{draft ? 'Start a new survey' : 'Start hospital survey'}</span>
