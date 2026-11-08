@@ -64,7 +64,7 @@ export default function Home({
           />
           <div>
             <p className="text-sm font-bold text-slate-900">CARE Forms</p>
-            <p className="text-xs text-slate-500">10BedICU TeleICU</p>
+            <p className="text-xs text-slate-500">TeleICU</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
