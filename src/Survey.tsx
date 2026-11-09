@@ -572,7 +572,7 @@ export default function Survey({
             <h2 className="mb-2 text-sm font-semibold text-slate-700">Not filling</h2>
             <div className="space-y-2">
               {notFilling.map((p) => (
-                <Card key={p.id} className="flex items-start justify-between gap-3 !p-3">
+                <Card key={p.id} className="flex items-start justify-between gap-3 p-3!">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-900">
                       <span className="text-slate-400">{p.num}</span> {p.title}

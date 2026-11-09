@@ -83,7 +83,7 @@ export default function History({ calls, target, onSync, onBack, onDelete, onSen
             const open = openId === c.id
             const no = PARTS.filter((p) => c.answers[p.id]?.filling === 'no')
             return (
-              <Card key={c.id} className="!p-0 overflow-hidden">
+              <Card key={c.id} className="p-0! overflow-hidden">
                 <button type="button" className="flex w-full items-center justify-between gap-3 p-3 text-left" onClick={() => setOpenId(open ? null : c.id)}>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900">{c.details.hospital}</p>

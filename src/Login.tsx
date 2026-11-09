@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { SubmitEvent } from 'react'
 import { supabase } from './supabase'
 import { btnPrimary, Field, inputCls } from './ui'
 
@@ -9,7 +9,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const submit = async (e: FormEvent) => {
+  const submit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!supabase) return
     setBusy(true)
@@ -20,7 +20,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top,_#d1fae5_0%,_#f8fafc_48%,_#f1f5f9_100%)] px-4 py-10 sm:px-6">
+    <div className="flex flex-1 flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top,#d1fae5_0%,#f8fafc_48%,#f1f5f9_100%)] px-4 py-10 sm:px-6">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
           <img src="/care-logo.svg" alt="CARE" className="mx-auto h-16 w-auto" />

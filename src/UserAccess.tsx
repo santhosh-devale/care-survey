@@ -125,7 +125,7 @@ export default function UserAccess({
         {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
         {message && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}
 
-        <Card className="!p-5 sm:!p-6">
+        <Card className="p-5! sm:p-6!">
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg text-emerald-800">+</span>
             <div>
@@ -177,7 +177,7 @@ export default function UserAccess({
                       </div>
                       <button
                         type="button"
-                        className={btnGhost + ' !w-auto !px-4 !py-2'}
+                        className={btnGhost + ' w-auto! px-4! py-2!'}
                         disabled={busy !== null}
                         onClick={() => void savePermissions(user.email, current, user.user_id)}
                       >

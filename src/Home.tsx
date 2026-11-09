@@ -118,7 +118,7 @@ export default function Home({
         )}
 
           {canSubmitSurveys && (
-            <button type="button" className="group flex min-h-40 flex-col items-start justify-between rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-950 p-5 text-left text-white shadow-lg shadow-emerald-950/10 transition hover:-translate-y-0.5 hover:from-emerald-800 hover:to-emerald-950 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200" onClick={onStart}>
+            <button type="button" className="group flex min-h-40 flex-col items-start justify-between rounded-2xl bg-linear-to-br from-emerald-700 to-emerald-950 p-5 text-left text-white shadow-lg shadow-emerald-950/10 transition hover:-translate-y-0.5 hover:from-emerald-800 hover:to-emerald-950 hover:shadow-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200" onClick={onStart}>
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-2xl">+</span>
               <span>
                 <span className="block text-lg font-bold">{draft ? 'Start a new survey' : 'Start hospital survey'}</span>
@@ -187,7 +187,7 @@ export default function Home({
             { label: 'Follow-up', value: count('Needs follow-up'), color: 'text-amber-800', dot: 'bg-amber-500' },
             { label: 'Escalate', value: count('Escalate'), color: 'text-rose-800', dot: 'bg-rose-500' },
           ].map((s) => (
-              <Card key={s.label} className="!p-4">
+              <Card key={s.label} className="p-4!">
                 <div className="flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${s.dot}`} />
                   <p className="text-xs font-medium text-slate-500">{s.label}</p>
@@ -210,7 +210,7 @@ export default function Home({
             </div>
             <div className="grid gap-2 lg:grid-cols-2">
               {calls.slice(0, 3).map((c) => (
-                <Card key={c.id} className="flex items-center justify-between gap-3 !p-4">
+                <Card key={c.id} className="flex items-center justify-between gap-3 p-4!">
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-600">H</span>
                     <div className="min-w-0">

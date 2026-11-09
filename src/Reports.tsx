@@ -305,7 +305,7 @@ export default function Reports({
 
         {rows && rows.length > 0 && (
           <>
-            <Card className="!p-4 sm:!p-5">
+            <Card className="p-4! sm:p-5!">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Filter survey data</h2>
@@ -372,7 +372,7 @@ export default function Reports({
                     { label: 'Need follow-up', value: report.ratings['Needs follow-up'], tone: 'text-amber-700' },
                     { label: 'Escalate', value: report.ratings.Escalate, tone: 'text-rose-700' },
                   ].map((item, index) => (
-                    <Card key={item.label} className={`relative overflow-hidden !p-5 ${index === 3 ? 'border-amber-100' : index === 4 ? 'border-rose-100' : ''}`}>
+                    <Card key={item.label} className={`relative overflow-hidden p-5! ${index === 3 ? 'border-amber-100' : index === 4 ? 'border-rose-100' : ''}`}>
                       <span className={`absolute right-4 top-4 h-2.5 w-2.5 rounded-full ${index === 3 ? 'bg-amber-400' : index === 4 ? 'bg-rose-400' : 'bg-emerald-400'}`} />
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</p>
                       <p className={`mt-3 text-3xl font-bold tracking-tight ${item.tone}`}>{item.value}</p>
@@ -489,7 +489,7 @@ export default function Reports({
                       {report.followUps.map((row) => {
                         const overdue = !!row.follow_up && row.follow_up < today
                         return (
-                          <Card key={row.id} className="!p-4">
+                          <Card key={row.id} className="p-4!">
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="truncate font-semibold text-slate-900">{row.hospital}</p>
