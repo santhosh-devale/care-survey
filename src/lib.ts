@@ -94,6 +94,9 @@ export function toRow(call: Call): Record<string, string | number> {
     const a = call.answers[p.id]
     row[`${p.num} ${p.title}`] = a ? (a.filling === 'yes' ? 'Yes' : 'No') : ''
     row[`${p.num} Reason`] = a?.filling === 'no' ? reasonText(a.reason) : ''
+    for (const f of p.followUps ?? []) {
+      row[`${p.num} ${f.label}`] = a?.filling === 'yes' ? (a.details?.[f.id] ?? '') : ''
+    }
     if (a?.remarks?.trim()) notes.push(`${p.num}: ${a.remarks.trim()}`)
   }
   row['Part remarks'] = notes.join(' | ')
@@ -149,6 +152,7 @@ export function toSubmitPayload(call: Call) {
           filling: a.filling === 'yes',
           reason_code: a.filling === 'no' ? (a.reason ?? '') : '',
           remarks: a.remarks ?? '',
+          details: a.filling === 'yes' && a.details ? a.details : null,
         },
       ]
     }),
@@ -192,6 +196,13 @@ export function summaryText(call: Call): string {
     `Spoke to: ${d.spokeTo}${d.designation ? ' (' + d.designation + ')' : ''}`,
     `Result: ${s.result} | ${s.yes}/${s.applicable} parts filling (${s.percent}%) | ${s.rating}`,
   ]
+  for (const p of PARTS) {
+    const a = call.answers[p.id]
+    if (a?.filling !== 'yes') continue
+    for (const f of p.followUps ?? []) {
+      if (a.details?.[f.id]) lines.push(`${p.num} ${f.label}: ${a.details[f.id]}`)
+    }
+  }
   const no = PARTS.filter((p) => call.answers[p.id]?.filling === 'no')
   if (no.length) {
     lines.push('', 'Not filling:')

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { DESIGNATIONS, GROUP_STYLE, PARTS, REASONS } from './data'
+import { DESIGNATIONS, GROUP_STYLE, PARTS, REASONS, type Part } from './data'
 import { HOSPITALS, locationForHospital, OTHER_HOSPITAL_OPTION } from './hospitals'
 import { INDIAN_STATES_AND_UTS, KARNATAKA_DISTRICTS, KARNATAKA_TALUKS } from './locations'
 import {
@@ -83,6 +83,8 @@ export default function Survey({
   const [saved, setSaved] = useState<Call | null>(null)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
+  const isDesktop = useIsDesktop()
+  const answeredCount = PARTS.filter((p) => partComplete(p, answers[p.id])).length
 
   // Keep the half-finished call on the phone so a dropped call or closed tab loses nothing.
   useEffect(() => {
@@ -161,14 +163,17 @@ export default function Survey({
     )
   }
 
-  const pct = Math.round((step / summaryStep) * 100)
+  const onPartsPage = isDesktop && step >= 1 && step <= total
+  const pct = onPartsPage
+    ? Math.round(((1 + answeredCount) / (summaryStep + 1)) * 100)
+    : Math.round((step / summaryStep) * 100)
 
   const header = (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 pb-3 pt-4 backdrop-blur">
       <div className="mx-auto flex max-w-4xl items-center justify-between">
         <button
           type="button"
-          onClick={() => (step === 0 ? onHome() : setStep(step - 1))}
+          onClick={() => (step === 0 ? onHome() : setStep(onPartsPage ? 0 : step - 1))}
           className="-ml-2 rounded-lg px-2 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-100"
         >
           ← {step === 0 ? 'Home' : 'Back'}
@@ -186,7 +191,7 @@ export default function Survey({
       </div>
       <div className="mx-auto mt-3 max-w-4xl">
         <div className="mb-1.5 flex justify-between text-[11px] font-medium text-slate-500">
-          <span>{step === 0 ? 'Hospital details' : step === summaryStep ? 'Final review' : `Part ${step} of ${total}`}</span>
+          <span>{step === 0 ? 'Hospital details' : step === summaryStep ? 'Final review' : onPartsPage ? `${answeredCount} of ${total} parts answered` : `Part ${step} of ${total}`}</span>
           <span>{pct}% complete</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
@@ -199,7 +204,8 @@ export default function Survey({
   /* ---------- step 0: call details ---------- */
   if (step === 0) {
     const up = <K extends keyof Details>(k: K, v: Details[K]) => setDetails({ ...details, [k]: v })
-    const ok = !!details.hospital.trim() && !!details.spokeTo.trim() && !!details.caller.trim()
+    const phoneIncomplete = details.phone.length > 0 && details.phone.length !== 10
+    const ok = !!details.hospital.trim() && !!details.spokeTo.trim() && !!details.caller.trim() && !phoneIncomplete
     const isKarnataka = details.state === 'Karnataka'
     const hospitalOptions = isKarnataka ? HOSPITALS : []
     const districtOptions = isKarnataka ? KARNATAKA_DISTRICTS : []
@@ -357,7 +363,7 @@ export default function Survey({
               />
             )}
           </div>
-          <Field label="Spoke to (name)" required>
+          <Field label="Point of contact" required>
             <input className={inputCls} value={details.spokeTo} onChange={(e) => up('spokeTo', e.target.value)} />
           </Field>
           <Field label="Designation" hint="Nurses in charge often fill these forms, so ask for them too.">
@@ -368,8 +374,17 @@ export default function Survey({
               ))}
             </select>
           </Field>
-          <Field label="Phone">
-            <input className={inputCls} type="tel" inputMode="tel" value={details.phone} onChange={(e) => up('phone', e.target.value)} />
+          <Field label="Phone" hint={phoneIncomplete ? 'Enter a 10-digit phone number.' : undefined}>
+            <input
+              className={inputCls}
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="10-digit number"
+              aria-invalid={phoneIncomplete}
+              value={details.phone}
+              onChange={(e) => up('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+            />
           </Field>
           <Field label="Your name" required>
             <input className={inputCls} value={details.caller} onChange={(e) => up('caller', e.target.value)} />
@@ -400,19 +415,86 @@ export default function Survey({
     )
   }
 
-  /* ---------- steps 1..16: one part each ---------- */
+  /* ---------- steps 1..N: one part per screen on phones, all parts on one page on desktop ---------- */
   if (step <= total) {
+    if (isDesktop) {
+      const firstOpen = PARTS.find((p) => !partComplete(p, answers[p.id]))
+      return (
+        <>
+          {header}
+          <div className="mx-auto w-full max-w-5xl flex-1 space-y-4 px-6 py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">CARE form parts</h1>
+              <p className="mt-1 text-sm text-slate-600">
+                For each part, ask: are your doctors and nurses filling this in CARE for ICU patients?
+              </p>
+            </div>
+            {PARTS.map((part) => {
+              const a = answers[part.id]
+              const done = partComplete(part, a)
+              return (
+                <div key={part.id} id={`part-${part.id}`} className="scroll-mt-28">
+                  <Card className={`grid grid-cols-[2fr_3fr] gap-6 ${done ? '' : 'ring-1 ring-amber-200'}`}>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${GROUP_STYLE[part.group] ?? 'bg-slate-100 text-slate-700'}`}>
+                          {part.group}
+                        </span>
+                        {done && <span className="text-xs font-semibold text-emerald-700">✓ Answered</span>}
+                      </div>
+                      <h2 className="mt-2 text-lg font-bold text-slate-900">
+                        <span className="text-slate-400">{part.num}</span> {part.title}
+                      </h2>
+                      <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                        {part.covers.map((c) => (
+                          <li key={c}>• {c}</li>
+                        ))}
+                      </ul>
+                      {part.conditional && (
+                        <p className="mt-2 text-xs text-slate-500">Only some patients need this. If no patient needed it, choose No and then R6.</p>
+                      )}
+                    </div>
+                    <PartForm part={part} answer={a} compact onChange={(next) => setAnswers((prev) => ({ ...prev, [part.id]: next }))} />
+                  </Card>
+                </div>
+              )
+            })}
+          </div>
+          <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 p-4 backdrop-blur">
+            <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+              <p className="text-sm text-slate-600">
+                {answeredCount} of {total} parts answered
+                {firstOpen && (
+                  <>
+                    {' · '}
+                    <button
+                      type="button"
+                      className="font-semibold text-emerald-700 hover:underline"
+                      onClick={() => document.getElementById(`part-${firstOpen.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    >
+                      Go to part {firstOpen.num}
+                    </button>
+                  </>
+                )}
+              </p>
+              <div className="w-full max-w-xs">
+                <button type="button" className={btnPrimary} disabled={!!firstOpen} onClick={() => goTo(summaryStep)}>
+                  See summary
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )
+    }
+
     const part = PARTS[step - 1]
     const a: Answer | undefined = answers[part.id]
-    const setAnswer = (next: Answer, all: Answers = { ...answers, [part.id]: next }) => {
+    const onChange = (next: Answer, advance: boolean) => {
+      const all = { ...answers, [part.id]: next }
       setAnswers(all)
-      return all
+      if (advance) window.setTimeout(() => goTo(step + 1, all), 220)
     }
-    const pickYes = () => {
-      const all = setAnswer({ filling: 'yes' })
-      window.setTimeout(() => goTo(step + 1, all), 220)
-    }
-    const canNext = !!a && (a.filling === 'yes' || (!!a.reason && (a.reason !== 'R8' || !!a.remarks?.trim())))
 
     return (
       <>
@@ -443,75 +525,15 @@ export default function Survey({
             )}
           </Card>
 
-          <div>
-            <p className="mb-3 text-base font-medium text-slate-800">
-              Are your doctors and nurses filling this in CARE for ICU patients?
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                aria-pressed={a?.filling === 'yes'}
-                onClick={pickYes}
-                className={`rounded-2xl border-2 py-5 text-lg font-bold transition active:scale-[0.98] ${
-                  a?.filling === 'yes'
-                    ? 'border-emerald-600 bg-emerald-600 text-white'
-                    : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-400'
-                }`}
-              >
-                Yes
-              </button>
-              <button
-                type="button"
-                aria-pressed={a?.filling === 'no'}
-                onClick={() => setAnswer({ filling: 'no', reason: a?.reason, remarks: a?.remarks })}
-                className={`rounded-2xl border-2 py-5 text-lg font-bold transition active:scale-[0.98] ${
-                  a?.filling === 'no'
-                    ? 'border-rose-600 bg-rose-600 text-white'
-                    : 'border-rose-200 bg-rose-50 text-rose-800 hover:border-rose-400'
-                }`}
-              >
-                No
-              </button>
-            </div>
-          </div>
-
-          {a?.filling === 'no' && (
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-slate-700">Main reason</p>
-              <div className="space-y-2">
-                {REASONS.map((r) => (
-                  <button
-                    key={r.code}
-                    type="button"
-                    aria-pressed={a.reason === r.code}
-                    onClick={() => setAnswer({ ...a, reason: r.code })}
-                    className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${
-                      a.reason === r.code
-                        ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-200'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className="mt-0.5 rounded-md bg-slate-800 px-1.5 py-0.5 text-xs font-bold text-white">{r.code}</span>
-                    <span>
-                      <span className="block text-sm font-semibold text-slate-900">{r.label}</span>
-                      <span className="block text-xs text-slate-500">{r.hint}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <Field label={a.reason === 'R8' ? 'Remarks (required for Other)' : 'Remarks (optional)'}>
-                <textarea
-                  rows={2}
-                  className={inputCls}
-                  value={a.remarks ?? ''}
-                  onChange={(e) => setAnswer({ ...a, remarks: e.target.value })}
-                />
-              </Field>
-            </div>
-          )}
+          <PartForm part={part} answer={a} onChange={onChange} />
         </div>
         <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 p-4 backdrop-blur">
-          <button type="button" className={btnPrimary + ' mx-auto lg:max-w-4xl'} disabled={!canNext} onClick={() => goTo(step + 1)}>
+          <button
+            type="button"
+            className={btnPrimary + ' mx-auto lg:max-w-4xl'}
+            disabled={!partComplete(part, a)}
+            onClick={() => goTo(step + 1)}
+          >
             {step === total ? 'See summary' : 'Next part'}
           </button>
         </div>
@@ -619,5 +641,151 @@ export default function Survey({
         )}
       </div>
     </>
+  )
+}
+
+/* ---------- helpers ---------- */
+
+const DESKTOP_QUERY = '(min-width: 1024px)'
+
+/** True on screens 1024px and wider (Tailwind's lg breakpoint). */
+function useIsDesktop(): boolean {
+  const [match, setMatch] = useState(() => typeof window !== 'undefined' && window.matchMedia(DESKTOP_QUERY).matches)
+  useEffect(() => {
+    const m = window.matchMedia(DESKTOP_QUERY)
+    const update = () => setMatch(m.matches)
+    m.addEventListener('change', update)
+    return () => m.removeEventListener('change', update)
+  }, [])
+  return match
+}
+
+/** A part is answered when it is Yes with every sub-question answered, or No with a reason (and remarks for Other). */
+function partComplete(part: Part, a: Answer | undefined): boolean {
+  if (!a) return false
+  if (a.filling === 'yes') return (part.followUps ?? []).every((f) => !!a.details?.[f.id])
+  return !!a.reason && (a.reason !== 'R8' || !!a.remarks?.trim())
+}
+
+/**
+ * Yes / No, sub-questions and reason for one part.
+ * onChange's second argument is true when the phone flow should move to the next part.
+ */
+function PartForm({
+  part,
+  answer: a,
+  onChange,
+  compact = false,
+}: {
+  part: Part
+  answer: Answer | undefined
+  onChange: (next: Answer, advance: boolean) => void
+  compact?: boolean
+}) {
+  const followUps = part.followUps ?? []
+  const allAnswered = (details: Record<string, string> | undefined) => followUps.every((f) => !!details?.[f.id])
+
+  const pickYes = () => {
+    // Parts with sub-questions wait for all of them before moving on.
+    if (followUps.length) onChange({ filling: 'yes', details: a?.filling === 'yes' ? a.details : undefined }, false)
+    else onChange({ filling: 'yes' }, true)
+  }
+  const pickDetail = (id: string, value: string) => {
+    const details = { ...(a?.details ?? {}), [id]: value }
+    // Move on only when this pick answers the last open sub-question, not when changing an earlier answer.
+    onChange({ filling: 'yes', details }, !allAnswered(a?.details) && allAnswered(details))
+  }
+
+  const bigBtn = compact ? 'rounded-xl py-2.5 text-base' : 'rounded-2xl py-5 text-lg'
+  const smallBtn = compact ? 'py-2 text-sm' : 'py-3 text-base'
+
+  return (
+    <div className={compact ? 'space-y-4' : 'space-y-5'}>
+      <div>
+        {!compact && (
+          <p className="mb-3 text-base font-medium text-slate-800">Are your doctors and nurses filling this in CARE for ICU patients?</p>
+        )}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            aria-pressed={a?.filling === 'yes'}
+            onClick={pickYes}
+            className={`${bigBtn} border-2 font-bold transition active:scale-[0.98] ${
+              a?.filling === 'yes'
+                ? 'border-emerald-600 bg-emerald-600 text-white'
+                : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-400'
+            }`}
+          >
+            Yes
+          </button>
+          <button
+            type="button"
+            aria-pressed={a?.filling === 'no'}
+            onClick={() => onChange({ filling: 'no', reason: a?.reason, remarks: a?.remarks }, false)}
+            className={`${bigBtn} border-2 font-bold transition active:scale-[0.98] ${
+              a?.filling === 'no'
+                ? 'border-rose-600 bg-rose-600 text-white'
+                : 'border-rose-200 bg-rose-50 text-rose-800 hover:border-rose-400'
+            }`}
+          >
+            No
+          </button>
+        </div>
+      </div>
+
+      {a?.filling === 'yes' &&
+        followUps.map((f) => (
+          <div key={f.id}>
+            <p className={`mb-2 font-medium text-slate-800 ${compact ? 'text-sm' : 'text-base'}`}>{f.question}</p>
+            <div className={`grid gap-2 ${f.options.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+              {f.options.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={a.details?.[f.id] === option}
+                  onClick={() => pickDetail(f.id, option)}
+                  className={`rounded-xl border-2 ${smallBtn} font-semibold transition active:scale-[0.98] ${
+                    a.details?.[f.id] === option
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-200'
+                      : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+      {a?.filling === 'no' && (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-slate-700">Main reason</p>
+          <div className={compact ? 'grid grid-cols-2 gap-2' : 'space-y-2'}>
+            {REASONS.map((r) => (
+              <button
+                key={r.code}
+                type="button"
+                aria-pressed={a.reason === r.code}
+                onClick={() => onChange({ ...a, reason: r.code }, false)}
+                className={`flex w-full items-start gap-3 rounded-xl border text-left transition ${compact ? 'p-2' : 'p-3'} ${
+                  a.reason === r.code
+                    ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-200'
+                    : 'border-slate-200 bg-white hover:bg-slate-50'
+                }`}
+              >
+                <span className="mt-0.5 rounded-md bg-slate-800 px-1.5 py-0.5 text-xs font-bold text-white">{r.code}</span>
+                <span>
+                  <span className="block text-sm font-semibold text-slate-900">{r.label}</span>
+                  {!compact && <span className="block text-xs text-slate-500">{r.hint}</span>}
+                </span>
+              </button>
+            ))}
+          </div>
+          <Field label={a.reason === 'R8' ? 'Remarks (required for Other)' : 'Remarks (optional)'}>
+            <textarea rows={2} className={inputCls} value={a.remarks ?? ''} onChange={(e) => onChange({ ...a, remarks: e.target.value }, false)} />
+          </Field>
+        </div>
+      )}
+    </div>
   )
 }

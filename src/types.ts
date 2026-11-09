@@ -5,6 +5,8 @@ export interface Answer {
   /** Reason code (R1 to R8). Only set when filling is "no". */
   reason?: string
   remarks?: string
+  /** Answers to the part's sub-questions, keyed by FollowUp id. Only set when filling is "yes". */
+  details?: Record<string, string>
 }
 
 export type Answers = Record<string, Answer>

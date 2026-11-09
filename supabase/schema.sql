@@ -40,7 +40,7 @@ alter table public.hospital_calls
 alter table public.hospital_calls
   add column if not exists taluk text;
 
--- One row per form part per call (16 rows for a full call).
+-- One row per form part per call (10 rows for a full call).
 create table if not exists public.call_answers (
   call_id      uuid not null references public.hospital_calls (id) on delete cascade,
   part_id      text not null,
@@ -51,6 +51,11 @@ create table if not exists public.call_answers (
   remarks      text,
   primary key (call_id, part_id)
 );
+
+-- Answers to a part's sub-questions, keyed by sub-question id,
+-- e.g. {"method": "ABHA"} or {"reason": "Yes", "complete": "No"}.
+alter table public.call_answers
+  add column if not exists details jsonb;
 
 create index if not exists hospital_calls_hospital_idx on public.hospital_calls (lower(hospital));
 create index if not exists hospital_calls_district_idx on public.hospital_calls (district);
@@ -258,7 +263,7 @@ begin
 
   for a in select * from jsonb_array_elements(coalesce(payload -> 'answers', '[]'::jsonb))
   loop
-    insert into public.call_answers (call_id, part_id, part_num, part_title, filling, reason_code, remarks)
+    insert into public.call_answers (call_id, part_id, part_num, part_title, filling, reason_code, remarks, details)
     values (
       v_id,
       a ->> 'part_id',
@@ -266,7 +271,8 @@ begin
       a ->> 'part_title',
       (a ->> 'filling')::boolean,
       nullif(a ->> 'reason_code', ''),
-      nullif(a ->> 'remarks', '')
+      nullif(a ->> 'remarks', ''),
+      nullif(a -> 'details', 'null'::jsonb)
     );
   end loop;
 

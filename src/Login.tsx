@@ -23,11 +23,9 @@ export default function Login() {
     <div className="flex flex-1 flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top,_#d1fae5_0%,_#f8fafc_48%,_#f1f5f9_100%)] px-4 py-10 sm:px-6">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-700 text-2xl font-bold text-white shadow-lg shadow-emerald-900/15">
-            C
-          </div>
-          <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">TeleICU</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">CARE Forms Survey</h1>
+          <img src="/care-logo.svg" alt="CARE" className="mx-auto h-16 w-auto" />
+          <p className="mt-5 text-xl font-bold tracking-[0.18em] text-emerald-800">TeleICU</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Patient Registration and Clinical Data Entry Survey</h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">Sign in with the account your administrator created for you.</p>
         </div>
         <form onSubmit={submit} className="space-y-5 rounded-3xl border border-white bg-white p-5 shadow-xl shadow-slate-900/10 sm:p-7">

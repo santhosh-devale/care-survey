@@ -1,135 +1,126 @@
+/** A sub-question asked only when the hospital answers Yes for a part. */
+export interface FollowUp {
+  /** Key the answer is stored under. Do not change once calls are saved. */
+  id: string
+  /** Shown to the caller in the survey. */
+  question: string
+  /** Short column name used in exports and reports. */
+  label: string
+  options: string[]
+}
+
 export interface Part {
   id: string
   num: string
   group: string
   title: string
-  /** Fields inside this part of the CARE form, shown so the caller can describe it on the phone. */
+  /** What the caller checks in this part, shown so they can describe it on the phone. */
   covers: string[]
-  /** Only some patients need this part (ABG, insulin, dialysis). */
+  /** Only some patients need this part (re-admission, respiratory support). */
   conditional?: boolean
+  /** Sub-questions asked, in order, when the answer is Yes. */
+  followUps?: FollowUp[]
 }
+
+const YES_NO = ['Yes', 'No']
 
 export const PARTS: Part[] = [
   {
-    id: 'io',
+    id: 'admission',
     num: '1',
-    group: 'Input / Output',
-    title: 'Input and Output Balance',
-    covers: ['Intake: type, value, unit', 'Output: type, value, unit'],
-  },
-  {
-    id: 'symptoms',
-    num: '2a',
-    group: 'Examination',
-    title: 'Symptoms',
-    covers: ['Symptom', 'Onset date', 'Status', 'Severity', 'Verification'],
-  },
-  {
-    id: 'diagnosis',
-    num: '2b',
-    group: 'Examination',
-    title: 'Diagnosis',
-    covers: ['Diagnosis', 'Onset date', 'Status', 'Severity', 'Verification'],
-  },
-  {
-    id: 'physical',
-    num: '2c',
-    group: 'Examination',
-    title: 'Physical Examination Info',
-    covers: ['Physical examination notes'],
-  },
-  {
-    id: 'position',
-    num: '2d',
-    group: 'Examination',
-    title: "Patient's Body Position",
-    covers: ['Body position'],
-  },
-  {
-    id: 'loc',
-    num: '3a',
-    group: 'Neurological',
-    title: 'Level of Consciousness',
-    covers: ['Level of consciousness'],
-  },
-  {
-    id: 'pupil',
-    num: '3b',
-    group: 'Neurological',
-    title: 'Pupil Size',
-    covers: ['Left pupil size', 'Right pupil size'],
-  },
-  {
-    id: 'plr',
-    num: '3c',
-    group: 'Neurological',
-    title: 'Pupillary Reaction to Light',
-    covers: ['Pupillary reaction to light'],
-  },
-  {
-    id: 'gcs',
-    num: '3d',
-    group: 'Neurological',
-    title: 'Glasgow Coma Scale',
-    covers: ['Eye opening', 'Verbal response', 'Motor response', 'Total GCS'],
-  },
-  {
-    id: 'dtr',
-    num: '3e',
-    group: 'Neurological',
-    title: 'Deep Tendon Reflexes',
-    covers: ['Biceps', 'Triceps', 'Patellar', 'Achilles', 'Plantar'],
-  },
-  {
-    id: 'resp',
-    num: '4',
-    group: 'Respiratory',
-    title: 'Respiratory Support',
-    covers: [
-      'Breath sounds',
-      'If decreased breath sounds',
-      'EtCO2 (mmHg)',
-      'Respiratory support',
-      'Other details',
+    group: 'Admission',
+    title: 'Patient Admission / Registration',
+    covers: ['Is patient registration happening in CARE?', 'If yes: through ABHA or manual registration'],
+    followUps: [
+      {
+        id: 'method',
+        question: 'How are patients being registered?',
+        label: 'Registration method',
+        options: ['ABHA', 'Manual', 'Both'],
+      },
     ],
   },
   {
-    id: 'abg',
+    id: 'bed',
+    num: '2',
+    group: 'Admission',
+    title: 'Bed Allocation',
+    covers: ['Is a bed allocated to the patient in CARE?'],
+  },
+  {
+    id: 'care_team',
+    num: '3',
+    group: 'Care Team',
+    title: 'Manage Care Team',
+    covers: ['Treating doctor added to the care team'],
+  },
+  {
+    id: 'diagnosis',
+    num: '4',
+    group: 'Clinical',
+    title: 'Diagnosis',
+    covers: ['Diagnosis added through forms', 'If yes: is severity mentioned?'],
+    followUps: [
+      { id: 'severity', question: 'Are they mentioning the severity?', label: 'Severity mentioned', options: YES_NO },
+    ],
+  },
+  {
+    id: 'readmission',
     num: '5',
-    group: 'Blood Gas',
-    title: 'Arterial Blood Gas Analysis',
-    covers: ['Upload ABG report'],
+    group: 'Admission',
+    title: 'Re-admission',
+    covers: ['Is re-admission being marked for returning patients?'],
     conditional: true,
   },
   {
-    id: 'sugar',
+    id: 'resp',
     num: '6',
-    group: 'Blood Sugar',
-    title: 'Blood Sugar and Insulin Intake',
-    covers: ['Blood sugar level (mg/dL)', 'Insulin intake: type, value, unit'],
+    group: 'Clinical',
+    title: 'Respiratory Support',
+    covers: ['Respiratory support details recorded'],
     conditional: true,
   },
   {
-    id: 'dialysis',
+    id: 'log_update',
     num: '7',
-    group: 'Dialysis',
-    title: 'Dialysis',
-    covers: ['Fluid balance', 'Net balance'],
-    conditional: true,
+    group: 'Monitoring',
+    title: 'Log Update',
+    covers: ['At least one log update per patient'],
   },
   {
-    id: 'sore',
+    id: 'vitals',
     num: '8',
-    group: 'Skin and Nursing',
-    title: 'Pressure Sore',
-    covers: ['Pressure sore: Yes / No'],
+    group: 'Monitoring',
+    title: 'Vitals Update',
+    covers: ['Vitals updated'],
   },
   {
-    id: 'nursing',
+    id: 'io',
     num: '9',
-    group: 'Skin and Nursing',
-    title: 'Nursing Care Given',
-    covers: ['Nursing care given'],
+    group: 'Monitoring',
+    title: 'Input and Output Balance',
+    covers: ['a. Intake', 'b. Output', 'c. Total balance'],
+    followUps: [
+      { id: 'intake', question: 'a. Is intake being recorded?', label: 'Intake', options: YES_NO },
+      { id: 'output', question: 'b. Is output being recorded?', label: 'Output', options: YES_NO },
+      { id: 'balance', question: 'c. Is the total balance being recorded?', label: 'Total balance', options: YES_NO },
+    ],
+  },
+  {
+    id: 'discharge',
+    num: '10',
+    group: 'Discharge',
+    title: 'Discharge',
+    covers: ['a. Proper discharge reason given', 'b. "Mark as complete" done after discharge'],
+    followUps: [
+      { id: 'reason', question: 'a. Is a proper discharge reason given?', label: 'Discharge reason', options: YES_NO },
+      {
+        id: 'complete',
+        question: 'b. After discharge, are they doing the "Mark as complete" step?',
+        label: 'Mark as complete',
+        options: YES_NO,
+      },
+    ],
   },
 ]
 
@@ -145,7 +136,7 @@ export const REASONS: Reason[] = [
   { code: 'R3', label: 'Not trained', hint: '"New staff joined after the training"' },
   { code: 'R4', label: 'Device / internet problem', hint: '"No tablet or network at the bedside"' },
   { code: 'R5', label: 'Form too long', hint: '"Too many fields to fill"' },
-  { code: 'R6', label: 'Not applicable to the patient', hint: '"No dialysis patient in the ICU"' },
+  { code: 'R6', label: 'Not applicable to the patient', hint: '"No re-admitted patient in the ICU"' },
   { code: 'R7', label: 'Nobody is assigned', hint: '"Nobody is responsible for this"' },
   { code: 'R8', label: 'Other', hint: 'Write the reason in the remarks' },
 ]
@@ -161,12 +152,9 @@ export const DESIGNATIONS = [
 
 /** Chip colours per group. Full class names are written out so Tailwind can see them. */
 export const GROUP_STYLE: Record<string, string> = {
-  'Input / Output': 'bg-sky-100 text-sky-800',
-  Examination: 'bg-blue-100 text-blue-800',
-  Neurological: 'bg-violet-100 text-violet-800',
-  Respiratory: 'bg-teal-100 text-teal-800',
-  'Blood Gas': 'bg-rose-100 text-rose-800',
-  'Blood Sugar': 'bg-amber-100 text-amber-800',
-  Dialysis: 'bg-cyan-100 text-cyan-800',
-  'Skin and Nursing': 'bg-emerald-100 text-emerald-800',
+  Admission: 'bg-sky-100 text-sky-800',
+  'Care Team': 'bg-violet-100 text-violet-800',
+  Clinical: 'bg-blue-100 text-blue-800',
+  Monitoring: 'bg-teal-100 text-teal-800',
+  Discharge: 'bg-emerald-100 text-emerald-800',
 }

@@ -10,6 +10,7 @@ interface AnswerRow {
   filling: boolean
   reason_code: string | null
   remarks: string | null
+  details: Record<string, string> | null
 }
 
 interface CallRow {
@@ -59,7 +60,12 @@ function downloadRows(rows: CallRow[]) {
     'Help needed for',
     'Follow-up date',
     'Call remarks',
-    ...PARTS.flatMap((part) => [`${part.num} ${part.title}`, `${part.num} reason`, `${part.num} remarks`]),
+    ...PARTS.flatMap((part) => [
+      `${part.num} ${part.title}`,
+      ...(part.followUps ?? []).map((f) => `${part.num} ${f.label}`),
+      `${part.num} reason`,
+      `${part.num} remarks`,
+    ]),
   ]
   const lines = rows.map((row) => {
     const answers = new Map(row.call_answers.map((answer) => [answer.part_id, answer]))
@@ -86,6 +92,7 @@ function downloadRows(rows: CallRow[]) {
     for (const part of PARTS) {
       const answer = answers.get(part.id)
       values.push(answer ? (answer.filling ? 'Yes' : 'No') : '')
+      for (const f of part.followUps ?? []) values.push(answer?.details?.[f.id] ?? '')
       values.push(answer?.reason_code ?? '')
       values.push(answer?.remarks ?? '')
     }
@@ -126,7 +133,7 @@ export default function Reports({
     for (let offset = 0; ; offset += PAGE_SIZE) {
       const { data, error: queryError } = await supabase
         .from('hospital_calls')
-        .select('id, hospital, state, district, taluk, called_at, caller_name, caller_role, spoke_to, designation, phone, rating, percent, overall_result, responsible, help_needed, help_for, follow_up, remarks, call_answers(part_id, filling, reason_code, remarks)')
+        .select('id, hospital, state, district, taluk, called_at, caller_name, caller_role, spoke_to, designation, phone, rating, percent, overall_result, responsible, help_needed, help_for, follow_up, remarks, call_answers(part_id, filling, reason_code, remarks, details)')
         .order('called_at', { ascending: false, nullsFirst: false })
         .order('id', { ascending: true })
         .range(offset, offset + PAGE_SIZE - 1)
