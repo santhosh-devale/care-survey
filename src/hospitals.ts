@@ -1,3 +1,5 @@
+import { KARNATAKA_TALUKS } from './locations'
+
 export const HOSPITALS = [
   'GH Devanahalli',
   'GH Bagepalli',
@@ -168,3 +170,114 @@ export const HOSPITALS = [
 ] as const
 
 export const OTHER_HOSPITAL_OPTION = '__other_hospital__'
+
+type HospitalLocation = { district: string; taluk: string }
+
+const normalizeLocationName = (value: string) => value.toLocaleLowerCase().replace(/[^a-z0-9]/g, '')
+
+const HOSPITAL_TALUK_ALIASES: Record<string, string> = {
+  srinivasapura: 'Srinivaspur',
+  sagara: 'Sagar',
+  gundulpete: 'Gundlupet',
+  nanjanagudu: 'Nanjangud',
+  hdkote: 'Heggadadevankote',
+  holenarasipura: 'Hole Narsipur',
+  arakalagudu: 'Arkalgud',
+  somwarpet: 'Somvarpet',
+  jamakhandi: 'Jamkhandi',
+  yellapura: 'Yellapur',
+  naragund: 'Nargund',
+  bagalkote: 'Bagalkot',
+  bantwal: 'Bantval',
+  bilagi: 'Bilgi',
+  basavanabagewadi: 'Basavana Bagevadi',
+  humnabad: 'Homnabad',
+  sindhanur: 'Sindhnur',
+  siraguppa: 'Siruguppa',
+  lingasugur: 'Lingsugur',
+  hukkeri: 'Hukeri',
+  hosadurga: 'Hosdurga',
+  molakalmur: 'Molakalmuru',
+  gowribidnur: 'Gauribidanur',
+  gudibande: 'Gudibanda',
+  hospet: 'Hosapete',
+  jewargi: 'Jevargi',
+  yelburga: 'Yelbarga',
+  hunagund: 'Hungund',
+  doddaballapura: 'Dodda Ballapur',
+  hoskote: 'Hosakote',
+  bangalorenorth: 'YELAHANKA',
+  bangaloreeast: 'Bengaluru East',
+  chikkodi: 'Chikodi',
+  athani: 'Athni',
+  bailhongal: 'Bailahongala',
+  raibag: 'Raybag',
+  belthangady: 'Beltangadi',
+  sulia: 'Sulya',
+  harihara: 'Harihar',
+  kalaghatagi: 'Kalghatgi',
+  byadagi: 'Byadgi',
+  shirahatti: 'Shirhatti',
+  arasikere: 'Arsikere',
+  sakaleshpura: 'Sakleshpur',
+  ranebennur: 'Ranibennur',
+  chitapur: 'Chittapur',
+  bangarpete: 'Bangarapet',
+  gangavathi: 'Gangawati',
+  kustagi: 'Kushtagi',
+  krpete: 'Krishnarajpet',
+  krnagara: 'Krishnarajanagara',
+  srirangapatna: 'Shrirangapattana',
+  tnarasipura: 'Tirumakudal - Narsipur',
+  kanakapur: 'Kanakapura',
+  shikaripura: 'Shikarpur',
+  soraba: 'Sorab',
+  thirthahalli: 'Tirthahalli',
+  chikkaayakanhalli: 'Chiknayakanhalli',
+  nrrura: 'Narasimharajapura',
+  bhadravathi: 'Bhadravati',
+  karkala: 'Karkal',
+  sirasi: 'Sirsi',
+  honnavara: 'Honavar',
+  joida: 'Supa',
+  siddapura: 'Siddapur',
+  sindagi: 'Sindgi',
+  hagribommanahalli: 'Hagaribommanahalli',
+  harpanahalli: 'Harapanahalli',
+  kgf: 'KOLAR GOLD FIELD',
+  hadagali: 'Hadagalli',
+}
+
+const HOSPITAL_LOCATION_OVERRIDES: Record<string, HospitalLocation> = {
+  krhospital: { district: 'Mysuru', taluk: 'Mysuru' },
+  shahpur: { district: 'Yadgir', taluk: 'Shahpur' },
+  kcgeneral: { district: 'Bengaluru Urban', taluk: 'Bengaluru North' },
+  cvraman: { district: 'Bengaluru Urban', taluk: 'Bengaluru East' },
+  jayanagara: { district: 'Bengaluru Urban', taluk: 'Bengaluru South' },
+  wenlockhospital: { district: 'Dakshina Kannada', taluk: 'Mangaluru' },
+  udupi: { district: 'Udupi', taluk: 'Udupi' },
+  ladygoshen: { district: 'Dakshina Kannada', taluk: 'Mangaluru' },
+}
+
+export function locationForHospital(hospital: string): HospitalLocation | null {
+  if (!HOSPITALS.some((listedHospital) => listedHospital === hospital)) return null
+
+  const name = hospital
+    .replace(/^(GH|DH|MCH)\s+/i, '')
+    .replace(/\s*\([^)]*\)\s*/g, '')
+    .trim()
+  const normalizedName = normalizeLocationName(name)
+  const override = HOSPITAL_LOCATION_OVERRIDES[normalizedName]
+  if (override) return override
+
+  const aliasedTaluk = HOSPITAL_TALUK_ALIASES[normalizedName]
+  const taluk = aliasedTaluk
+    ? Object.values(KARNATAKA_TALUKS).flat().find((name) => name === aliasedTaluk)
+    : Object.values(KARNATAKA_TALUKS)
+        .flat()
+        .find((name) => normalizeLocationName(name) === normalizedName)
+  if (!taluk) return null
+
+  const district = Object.entries(KARNATAKA_TALUKS).find(([, taluks]) => taluks.includes(taluk))?.[0]
+  return district ? { district, taluk } : null
+}

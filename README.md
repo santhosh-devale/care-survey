@@ -53,7 +53,7 @@ Rules enforced by the database, not just the app:
 
 ## How a call works
 
-1. **Call details**: choose the state/UT first, then choose a hospital from its supplied list or enter another hospital manually. The supplied hospital list currently covers Karnataka; for other states/UTs, enter the hospital name manually. Add the district and taluk. Karnataka district and taluk lists are provided; other states/UTs and unlisted Karnataka locations can be entered manually.
+1. **Call details**: choose the state/UT first, then choose a hospital from its supplied list or enter another hospital manually. For listed Karnataka hospitals, the district and taluk fill automatically and can be changed. The supplied hospital list currently covers Karnataka; for other states/UTs, enter the hospital name and location manually. Karnataka district and taluk lists are provided; unlisted Karnataka locations can also be entered manually.
 2. **16 parts, one per screen**: Yes or No. Yes moves to the next part. No asks for a reason code (R1 to R8) and optional remarks.
 3. **Summary**: score ring, rating, the parts not being filled, then who is responsible per shift, help needed and follow-up date.
 4. **Save**: on the phone, and to the database. Share the summary on WhatsApp.
