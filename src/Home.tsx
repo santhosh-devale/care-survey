@@ -63,8 +63,8 @@ export default function Home({
             className="h-10 w-24 shrink-0 object-contain"
           />
           <div>
-            <p className="text-sm font-bold text-slate-900">CARE Forms</p>
-            <p className="text-xs text-slate-500">TeleICU</p>
+            <p className="text-2xl font-bold text-slate-700">CARE TeleICU</p>
+            {/* <p className="text-xs text-slate-500">TeleICU</p> */}
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -86,7 +86,7 @@ export default function Home({
         <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="text-sm font-semibold text-emerald-800">Hospital operations</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">CARE Forms Survey</h1>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">CARE Patient Registration and Clinical Data Entry Survey</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               {canViewReports
                 ? 'Capture hospital progress and see where teams need support across India.'
