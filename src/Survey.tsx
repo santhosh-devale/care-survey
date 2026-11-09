@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DESIGNATIONS, GROUP_STYLE, PARTS, REASONS } from './data'
-import { HOSPITALS, OTHER_HOSPITAL_OPTION } from './hospitals'
+import { HOSPITALS, locationForHospital, OTHER_HOSPITAL_OPTION } from './hospitals'
 import { INDIAN_STATES_AND_UTS, KARNATAKA_DISTRICTS, KARNATAKA_TALUKS } from './locations'
 import {
   emptyClosing,
@@ -244,7 +244,7 @@ export default function Survey({
               manualHospital
                 ? 'Enter the hospital name manually; it will be saved as entered.'
                 : isKarnataka
-                  ? 'Search the list or choose “Other / enter manually”.'
+                  ? 'Search the list; district and taluk fill automatically for listed hospitals.'
                   : 'No supplied hospital list for this state; enter the hospital name manually.'
             }
           >
@@ -255,12 +255,33 @@ export default function Survey({
               onChange={(e) => {
                 const value = e.target.value
                 if (value === OTHER_HOSPITAL_OPTION) {
-                  up('hospital', '')
+                  const wasListedHospital = HOSPITALS.some((hospital) => hospital === details.hospital)
+                  setDetails({
+                    ...details,
+                    hospital: '',
+                    district: wasListedHospital ? '' : details.district,
+                    taluk: wasListedHospital ? '' : details.taluk,
+                  })
                   setManualHospital(true)
+                  if (wasListedHospital) {
+                    setCustomDistrict(false)
+                    setCustomTaluk(false)
+                  }
                   return
                 }
-                up('hospital', value)
+                const location = locationForHospital(value)
+                const wasListedHospital = HOSPITALS.some((hospital) => hospital === details.hospital)
+                setDetails({
+                  ...details,
+                  hospital: value,
+                  district: location?.district ?? (wasListedHospital ? '' : details.district),
+                  taluk: location?.taluk ?? (wasListedHospital ? '' : details.taluk),
+                })
                 setManualHospital(!!value && !hospitalOptions.some((hospital) => hospital === value))
+                if (location || wasListedHospital) {
+                  setCustomDistrict(false)
+                  setCustomTaluk(false)
+                }
               }}
               placeholder="Search or enter hospital name"
               autoComplete="off"
