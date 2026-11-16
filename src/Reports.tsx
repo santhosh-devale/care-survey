@@ -3,6 +3,7 @@ import { PARTS, REASONS } from './data'
 import { supabase } from './supabase'
 import { describeError } from './sync'
 import type { Rating, UserPermissions } from './types'
+import { INDIAN_STATES_AND_UTS, KARNATAKA_DISTRICTS, KARNATAKA_TALUKS } from './locations'
 import { Card, RatingBadge } from './ui'
 
 interface AnswerRow {
@@ -162,21 +163,32 @@ export default function Reports({
   }, [load])
 
   const states = useMemo(
-    () => Array.from(new Set((rows ?? []).map((row) => (row.state ?? '').trim()).filter(Boolean))).sort(),
+    () => Array.from(new Set([
+      ...INDIAN_STATES_AND_UTS,
+      ...(rows ?? []).map((row) => (row.state ?? '').trim()).filter(Boolean),
+    ])).sort(),
     [rows],
   )
   const districts = useMemo(
-    () => Array.from(new Set((rows ?? [])
-      .filter((row) => !state || (row.state ?? '').trim() === state)
-      .map((row) => (row.district ?? '').trim())
-      .filter(Boolean))).sort(),
+    () => Array.from(new Set([
+      ...(!state || state === 'Karnataka' ? KARNATAKA_DISTRICTS : []),
+      ...(rows ?? [])
+        .filter((row) => !state || (row.state ?? '').trim() === state)
+        .map((row) => (row.district ?? '').trim())
+        .filter(Boolean),
+    ])).sort(),
     [rows, state],
   )
   const taluks = useMemo(
-    () => Array.from(new Set((rows ?? [])
-      .filter((row) => (!state || (row.state ?? '').trim() === state) && (!district || (row.district ?? '').trim() === district))
-      .map((row) => (row.taluk ?? '').trim())
-      .filter(Boolean))).sort(),
+    () => Array.from(new Set([
+      ...(!state || state === 'Karnataka'
+        ? (district ? KARNATAKA_TALUKS[district] ?? [] : Object.values(KARNATAKA_TALUKS).flat())
+        : []),
+      ...(rows ?? [])
+        .filter((row) => (!state || (row.state ?? '').trim() === state) && (!district || (row.district ?? '').trim() === district))
+        .map((row) => (row.taluk ?? '').trim())
+        .filter(Boolean),
+    ])).sort(),
     [rows, state, district],
   )
 
