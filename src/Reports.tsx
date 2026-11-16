@@ -20,6 +20,7 @@ interface CallRow {
   district: string | null
   taluk: string | null
   called_at: string | null
+  created_by: string
   caller_name: string
   caller_role: string
   spoke_to: string
@@ -123,6 +124,7 @@ export default function Reports({
   const [district, setDistrict] = useState('')
   const [taluk, setTaluk] = useState('')
   const [hospitalSearch, setHospitalSearch] = useState('')
+  const [enteredBy, setEnteredBy] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
@@ -133,7 +135,7 @@ export default function Reports({
     for (let offset = 0; ; offset += PAGE_SIZE) {
       const { data, error: queryError } = await supabase
         .from('hospital_calls')
-        .select('id, hospital, state, district, taluk, called_at, caller_name, caller_role, spoke_to, designation, phone, rating, percent, overall_result, responsible, help_needed, help_for, follow_up, remarks, call_answers(part_id, filling, reason_code, remarks, details)')
+        .select('id, created_by, hospital, state, district, taluk, called_at, caller_name, caller_role, spoke_to, designation, phone, rating, percent, overall_result, responsible, help_needed, help_for, follow_up, remarks, call_answers(part_id, filling, reason_code, remarks, details)')
         .order('called_at', { ascending: false, nullsFirst: false })
         .order('id', { ascending: true })
         .range(offset, offset + PAGE_SIZE - 1)
@@ -178,6 +180,19 @@ export default function Reports({
     [rows, state, district],
   )
 
+  const enteredByOptions = useMemo(() => {
+    const names = new Map<string, Set<string>>()
+    for (const row of rows ?? []) {
+      if (!row.created_by) continue
+      const set = names.get(row.created_by) ?? new Set<string>()
+      const name = (row.caller_name ?? '').trim()
+      if (name) set.add(name)
+      names.set(row.created_by, set)
+    }
+    return Array.from(names, ([id, set]) => ({ id, label: Array.from(set).sort().join(' / ') || 'Unnamed user' }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [rows])
+
   const report = useMemo(() => {
     const search = hospitalSearch.trim().toLocaleLowerCase()
     const inScope = (rows ?? []).filter((row) => {
@@ -186,6 +201,7 @@ export default function Reports({
         (!state || (row.state ?? '').trim() === state) &&
         (!district || (row.district ?? '').trim() === district) &&
         (!taluk || (row.taluk ?? '').trim() === taluk) &&
+        (!enteredBy || row.created_by === enteredBy) &&
         (!startDate || date >= startDate) &&
         (!endDate || date <= endDate) &&
         (!search || row.hospital.toLocaleLowerCase().includes(search))
@@ -256,7 +272,7 @@ export default function Reports({
     )
     const average = latest.length ? Math.round(latest.reduce((sum, row) => sum + row.percent, 0) / latest.length) : 0
     return { calls: inScope, latest, ratings, parts, reasons, followUps, trends, hospitals, average }
-  }, [rows, state, district, taluk, hospitalSearch, startDate, endDate])
+  }, [rows, state, district, taluk, enteredBy, hospitalSearch, startDate, endDate])
 
   const [today] = useState(() => new Date().toLocaleDateString('en-CA'))
   const maxReason = Math.max(1, ...report.reasons.map((reason) => reason.n))
@@ -309,15 +325,15 @@ export default function Reports({
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Filter survey data</h2>
-                  <p className="mt-0.5 text-xs text-slate-500">Adjust the date range and hospital area.</p>
+                  <p className="mt-0.5 text-xs text-slate-500">Adjust the date range, hospital area, and who entered the data.</p>
                 </div>
-                {(state || district || taluk || hospitalSearch || startDate || endDate) && (
-                  <button type="button" className="text-xs font-semibold text-emerald-800 hover:text-emerald-950" onClick={() => { setState(''); setDistrict(''); setTaluk(''); setHospitalSearch(''); setStartDate(''); setEndDate('') }}>
+                {(state || district || taluk || enteredBy || hospitalSearch || startDate || endDate) && (
+                  <button type="button" className="text-xs font-semibold text-emerald-800 hover:text-emerald-950" onClick={() => { setState(''); setDistrict(''); setTaluk(''); setEnteredBy(''); setHospitalSearch(''); setStartDate(''); setEndDate('') }}>
                     Clear filters
                   </button>
                 )}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
                 {canReadDashboard && (
                   <label className="text-xs font-semibold text-slate-600">
                     Hospital
@@ -348,6 +364,15 @@ export default function Reports({
                     <select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" value={taluk} onChange={(event) => setTaluk(event.target.value)}>
                       <option value="">All taluks</option>
                       {taluks.map((item) => <option key={item}>{item}</option>)}
+                    </select>
+                  </label>
+                )}
+                {canReadDashboard && (
+                  <label className="text-xs font-semibold text-slate-600">
+                    Entered by
+                    <select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100" value={enteredBy} onChange={(event) => setEnteredBy(event.target.value)}>
+                      <option value="">All users</option>
+                      {enteredByOptions.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
                     </select>
                   </label>
                 )}
